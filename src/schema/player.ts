@@ -4,14 +4,22 @@ import { Gender, NewPlayer } from '../type'
 export interface PlayerDocument extends NewPlayer, Document {}
 
 const playerSchema = new Schema<PlayerDocument>({
-  officialName: { type: String, required: true, trim: true },
+  officialName: {
+    local: { type: String, required: true, trim: true },
+    en: { type: String, required: true, trim: true },
+    pronunciation: { type: String }
+  },
   level: { type: Number, required: true, default: 0 },
   gender: {
     type: String,
     enum: Object.values(Gender),
     required: true,
   },
-  displayName: { type: String, trim: true },
+  displayName:{
+    local: { type: String, trim: true },
+    en: { type: String, trim: true },
+    pronunciation: { type: String }
+  },
   dob: { type: Date },
   club: { type: String, trim: true },
   photo: { type: String, trim: true },

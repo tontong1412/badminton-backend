@@ -1,10 +1,9 @@
 import mongoose from 'mongoose'
+import CONFIG from './index'
 
-// Get MongoDB URI from environment variable or use default
-const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/badminton'
 mongoose.set('strictQuery', false)
 
-mongoose.connect(MONGODB_URI)
+mongoose.connect(CONFIG.DATABASE.URI)
   .then(() => {
     console.log('connected to MongoDb')
   })
