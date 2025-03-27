@@ -1,16 +1,12 @@
 services:
   app:
-    image: node:22-alpine
-    working_dir: /app
+    build:
+      context: .
+      dockerfile: Dockerfile
     ports:
       - "8080:8080"
-    environment:
-      - NODE_ENV=development
-      - MONGODB_URI=mongodb://mongodb:27017/badminton
-      - REDIS_URL=redis://redis:6379
-    volumes:
-      - .:/app/
-    command: ["npm", "run", "dev"]
+    env_file:
+      - .env
     depends_on:
       - mongodb
       - redis

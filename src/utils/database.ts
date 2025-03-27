@@ -1,9 +1,9 @@
 import mongoose from 'mongoose'
-import CONFIG from './index'
+import config from '../config/index'
 
 mongoose.set('strictQuery', false)
 
-mongoose.connect(CONFIG.DATABASE.URI)
+mongoose.connect(config.DATABASE.URI)
   .then(() => {
     console.log('connected to MongoDb')
   })

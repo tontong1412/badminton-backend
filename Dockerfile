@@ -1,23 +1,25 @@
-# Base image
-FROM node:22-alpine
+FROM node:22-alpine AS base
 
-# Set working directory
-WORKDIR /app
-
-# Copy package.json and package-lock.json
-COPY package*.json ./
-
-# Install dependencies
+# Backend build dependencies
+FROM base AS deps
+WORKDIR /deps
+COPY ./package*.json ./
 RUN npm install
 
-# Copy the rest of the application code
+# Build backend
+FROM base AS builder
+WORKDIR /build
+COPY --from=deps /deps/node_modules ./node_modules
 COPY . .
-
-# Build TypeScript code
 RUN npm run build
 
-# Expose the port the app runs on
+# Install runtime dependencies and copy builds from the previous stage
+FROM base AS prod
+ENV NODE_ENV=production
+ENV PORT=8080
 EXPOSE 8080
-
-# Command to run the app
+WORKDIR /app
+COPY ./package*.json ./
+RUN npm install --omit=dev
+COPY --from=builder ./build/build ./build/
 CMD ["npm", "start"]

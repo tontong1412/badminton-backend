@@ -1,3 +1,4 @@
+import { Request } from 'express'
 import { Types } from 'mongoose'
 
 export enum Gender {
@@ -42,8 +43,10 @@ export interface User {
   googleID?: string;
 }
 
+
 export type NewUser = Omit<User, 'id'>;
 export type NonSensitiveUser = Omit<User, 'hash'>
+export type TokenPayload = Omit<NonSensitiveUser, 'googleID'>
 
 export interface Login {
   email: string;
@@ -51,10 +54,30 @@ export interface Login {
 }
 
 export interface LoginResponse {
-  email: string;
-  token: string;
+  accessToken: string;
+  refreshToken: string;
 }
 
 export interface ErrorResponse {
-  error: string;
+  message: string;
+}
+
+export interface RequestWithCookies extends Request {
+  cookies: {
+    access?: string;
+    refresh?: string;
+  }
+}
+
+export interface MailContent {
+  to: string;
+  subject: string;
+  text: string;
+}
+
+export interface MailOptions extends MailContent {
+  from :{
+    name: string;
+    address: string;
+  }
 }
