@@ -10,7 +10,7 @@ Integrating GitHub Actions for CI/CD to streamline development workflows and aut
 
 ## To run the project
 
-This project requires MongoDB as database. For development, MongoDB container is included in `docker-compose.yaml` so to run the project is simply run
+This project requires MongoDB as database. For development, MongoDB and Redis container is included in `docker-compose.yaml` so to run the project is simply run
 
 ```bash
 docker compose up

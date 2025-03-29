@@ -4,10 +4,8 @@ services:
     working_dir: /app
     ports:
       - "8080:8080"
-    environment:
-      - NODE_ENV=development
-      - MONGODB_URI=mongodb://mongodb:27017/badminton
-      - REDIS_URL=redis://redis:6379
+    env_file:
+      - .env
     volumes:
       - .:/app/
     command: ["npm", "run", "dev"]
