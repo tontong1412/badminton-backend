@@ -59,10 +59,10 @@ jobs:
           username: ${{ secrets.SERVER_USER }}
           key: ${{ secrets.SERVER_SSH_KEY }}
           script: |
-            docker pull ${{ secrets.DOCKER_USERNAME }}/badminton-service:${{ github.sha }}
-            docker stop badminton-service || true
-            docker rm badminton-service || true
-            docker run -d --name badminton-service -p 8080:8080 ${{ secrets.DOCKER_USERNAME }}/badminton-service:${{ github.sha }}
+            sudo docker pull ${{ secrets.DOCKER_USERNAME }}/badminton-service:${{ github.sha }}
+            sudo docker stop badminton-service || true
+            sudo docker rm badminton-service || true
+            sudo docker run -d --name badminton-service -p 8080:8080 ${{ secrets.DOCKER_USERNAME }}/badminton-service:${{ github.sha }}
 
   tag_release:
     needs: [deploy]
