@@ -62,7 +62,7 @@ jobs:
             sudo docker pull ${{ secrets.DOCKER_USERNAME }}/badminton-service:${{ github.sha }}
             sudo docker stop badminton-service || true
             sudo docker rm badminton-service || true
-            sudo docker run -d --name badminton-service -p 8080:8080 ${{ secrets.DOCKER_USERNAME }}/badminton-service:${{ github.sha }}
+            sudo docker run -d --restart unless-stopped --name badminton-service -p 8080:8080 ${{ secrets.DOCKER_USERNAME }}/badminton-service:${{ github.sha }}
 
   tag_release:
     needs: [deploy]
