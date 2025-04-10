@@ -8,9 +8,10 @@ export enum Gender {
 
 export interface Player {
   id: Types.ObjectId;
+  userID?: Types.ObjectId;
   officialName: {
     local: string;
-    en: string;
+    en?: string;
     pronunciation?: string;
   };
   level: number;

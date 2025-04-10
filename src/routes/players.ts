@@ -1,25 +1,11 @@
-import express, { Response } from 'express'
-import playerService from '../services/playerService'
-import { NewPlayer, NonSensitivePlayer } from '../type'
+import express from 'express'
+import playerController from '../controllers/players'
 
 const router = express.Router()
 
-router.get('/', async(_req, res: Response<NonSensitivePlayer[]>) => {
-  res.send(await playerService.getNonSensitivePlayers())
-})
-
-router.post('/', async(req, res: Response<NonSensitivePlayer>) => {
-  const newPlayer = await playerService.createPlayer(req.body as NewPlayer)
-  res.send(newPlayer)
-})
-
-router.get('/:id', async(req, res: Response<NonSensitivePlayer>) => {
-  const player = await playerService.findById(req.params.id)
-  if (player) {
-    res.send(player)
-  } else {
-    res.sendStatus(404)
-  }
-})
+router.get('/', playerController.getNonSensitivePlayers)
+router.post('/', playerController.createPlayer)
+router.get('/:id', playerController.getNonSensitivePlayerById)
+router.post('/claim', playerController.claimPlayer)
 
 export default router

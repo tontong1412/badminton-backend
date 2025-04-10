@@ -1,6 +1,7 @@
 const DATABASE  = {
   COLLECTION: {
-    PLAYER: 'player'
+    PLAYER: 'player',
+    USER: 'user',
   }
 }
 

@@ -2,7 +2,10 @@ POST http://localhost:8080/api/players
 content-type: application/json
 
 {
-  "officialName": "Kaito Kuroba",
+  "officialName":{ 
+    "local": "Kaito Kuroba",
+    "en": "Kaito Kuroba"
+  },
   "gender": "male",
   "level": 3
 }

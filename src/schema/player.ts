@@ -1,7 +1,10 @@
-import mongoose, { Document, Schema } from 'mongoose'
+import mongoose, { Document, Schema, Types } from 'mongoose'
 import { Gender, NewPlayer } from '../type'
+import constants from '../constants'
 
-export interface PlayerDocument extends NewPlayer, Document {}
+export interface PlayerDocument extends NewPlayer, Document {
+  userID?: Types.ObjectId;
+}
 
 const playerSchema = new Schema<PlayerDocument>({
   officialName: {
@@ -29,7 +32,8 @@ const playerSchema = new Schema<PlayerDocument>({
     tg: { type: String, trim: true },
     whatsapp: { type: String, trim: true },
     email: { type: String, trim: true },
-  }
+  },
+  userID: { type: Schema.Types.ObjectId, ref: constants.DATABASE.COLLECTION.USER },
 }, {
   timestamps: { createdAt: true, updatedAt: true }
 })

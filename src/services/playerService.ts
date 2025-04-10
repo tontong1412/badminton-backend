@@ -1,5 +1,5 @@
 import { NewPlayer, NonSensitivePlayer } from '../type'
-import PlayerModel from '../schema/player'
+import PlayerModel, { PlayerDocument } from '../schema/player'
 
 const getNonSensitivePlayers = async(): Promise<NonSensitivePlayer[]> => {
   try{
@@ -49,8 +49,27 @@ const findById = async(id: string): Promise<NonSensitivePlayer | null> => {
   }
 }
 
+const update = async(id: string, params: unknown): Promise<NonSensitivePlayer | null> => {
+  try{
+    const player = await PlayerModel.findByIdAndUpdate(id, params as PlayerDocument, { new:true })
+    if(!player){
+      return null
+    }
+    const playerJSON = player.toJSON() as NonSensitivePlayer
+
+    return playerJSON
+  }catch(error: unknown){
+    let errorMessage = 'Something went wrong.'
+    if (error instanceof Error) {
+      errorMessage += ' Error: ' + error.message
+    }
+    throw new Error(errorMessage)
+  }
+}
+
 export default {
   getNonSensitivePlayers,
   createPlayer,
-  findById
+  findById,
+  update
 }
