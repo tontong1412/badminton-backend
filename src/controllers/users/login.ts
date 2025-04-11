@@ -38,14 +38,14 @@ const login = async(
     res.cookie('access', accessToken, {
       httpOnly: true,
       secure: config.NODE_ENV === 'production',
-      maxAge: config.NODE_ENV === 'production' ? constants.TOKEN.EXPIRE_TIME.ACCESS : 60 * 1000, // 1 minute in development,
+      maxAge: config.NODE_ENV === 'production' ? constants.TOKEN.EXPIRE_TIME.ACCESS : 30 * 60 * 1000, // 30 minute in development,
       sameSite: 'strict'
     })
 
     res.cookie('refresh', refreshToken, {
       httpOnly: true,
       secure: config.NODE_ENV === 'production',
-      maxAge: config.NODE_ENV === 'production' ? constants.TOKEN.EXPIRE_TIME.ACCESS : 60 * 1000, // 1 minute in development,
+      maxAge: config.NODE_ENV === 'production' ? constants.TOKEN.EXPIRE_TIME.ACCESS : 30 * 60 * 1000, // 30 minute in development,
       sameSite: 'strict'
     })
 

@@ -34,7 +34,7 @@ export interface Player {
 }
 
 export type NewPlayer = Omit<Player, 'id'>;
-export type NonSensitivePlayer = Omit<Player, 'contact' | 'gender' | 'dob'>;
+export type NonSensitivePlayer = Omit<Player, 'contact' | 'gender' | 'dob' | 'userID'>;
 
 export interface User {
   id: Types.ObjectId;
@@ -69,6 +69,11 @@ export interface RequestWithCookies extends Request {
     refresh?: string;
   }
 }
+
+export interface ResponseLocals {
+  user: TokenPayload;
+}
+
 
 export interface MailContent {
   to: string;

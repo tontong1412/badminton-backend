@@ -3,6 +3,7 @@ import playerService from '../../services/playerService'
 import tokenUtils from '../../utils/token'
 import config from '../../config'
 import { RequestWithCookies } from '../../type'
+import UserModel from '../../schema/user'
 
 interface ClaimPlayer {
   playerID: string
@@ -37,6 +38,13 @@ const claimPlayer = async(
 
     if (!updatedPlayer) {
       res.status(404).send('Player not found')
+      return
+    }
+
+    const updatedUser = await UserModel.findByIdAndUpdate(decodedToken.id, { playerID })
+
+    if (!updatedUser) {
+      res.status(404).send('User not found')
       return
     }
 

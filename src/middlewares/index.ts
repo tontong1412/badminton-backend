@@ -26,10 +26,18 @@ const errorHandler = (
 
 const auth = (req: RequestWithCookies, res: Response, next: NextFunction) => {
   const token = req.cookies.access
-  if (!token) return res.status(401).send('Unauthorized')
+  if (!token) {
+    res.status(401).send('Unauthorized')
+    return
+  }
 
   const decodedToken = tokenUtils.decode(token, config.ACCESS_SECRET)
-  if(!decodedToken.id) return res.status(401).send('Token Invalid')
+  if(!decodedToken.id) {
+    res.status(401).send('Token Invalid')
+    return
+  }
+
+  res.locals.user = decodedToken
 
   next()
   return
