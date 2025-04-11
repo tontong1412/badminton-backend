@@ -6,7 +6,8 @@ import TournamentModel from '../../schema/tournament'
 
 const create =  async(
   req: Request<unknown, unknown, NewEvent, unknown>,
-  res: Response<Event | ErrorResponse, ResponseLocals>) => {
+  res: Response<Event | ErrorResponse, ResponseLocals>
+) => {
 
   const { user } = res.locals
 

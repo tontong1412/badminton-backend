@@ -202,17 +202,15 @@ export interface Event {
   limit: number;
   type: EventType;
   status: EventStatus;
-  teams: [{
-    id: Types.ObjectId;
-    players: [NonSensitivePlayer]
-    status: TeamStatus
-  }];
+  teams: [EventTeam];
 }
 export type NewEvent = Omit<Event, 'id'>;
 export interface Team {
   id: Types.ObjectId;
   players: [NonSensitivePlayer]
 }
+
+export type NewTeam = Omit<Team, 'id'>
 
 export enum MatchStatus {
   Waiting = 'waiting',
@@ -269,4 +267,19 @@ export interface SessionMatch extends BaseMatch {
 }
 
 export type Match = TournamentMatch | SessionMatch
+
+export enum PaymentStatus {
+  Unpaid = 'unpaid',
+  Paid = 'paid',
+  Pending = 'pending',
+  Refunded = 'refunded',
+}
+
+export interface EventTeam {
+  id: Types.ObjectId;
+  players: NonSensitivePlayer[];
+  contactPerson: ContactPlayer;
+  status: TeamStatus;
+  paymentStatus: PaymentStatus;
+}
 

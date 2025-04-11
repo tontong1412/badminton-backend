@@ -1,5 +1,5 @@
 import mongoose, { Document, Schema } from 'mongoose'
-import { BillingMethod, EventFormat, EventStatus, EventType, Gender, NewEvent } from '../type'
+import { BillingMethod, EventFormat, EventStatus, EventType, Gender, NewEvent, PaymentStatus, TeamStatus } from '../type'
 import constants from '../constants'
 
 export interface EventDocument extends NewEvent, Document {}
@@ -47,6 +47,38 @@ const eventSchema = new Schema<EventDocument>({
   },
   teams: [{
     id: { type: Schema.Types.ObjectId, ref: constants.DATABASE.COLLECTION.TEAM },
+    status: {
+      type: String,
+      enum: Object.values(TeamStatus),
+      required: true,
+      default: TeamStatus.Idle
+    },
+    paymentStatus: {
+      type: String,
+      enum: Object.values(PaymentStatus),
+      required: true,
+      default: PaymentStatus.Unpaid
+    },
+    contactPerson: {
+      id: { type: Schema.Types.ObjectId, ref: constants.DATABASE.COLLECTION.PLAYER },
+      officialName: {
+        local: { type: String, required: true, trim: true },
+        en: { type: String, trim: true },
+        pronunciation: { type: String }
+      },
+      displayName:{
+        local: { type: String, trim: true },
+        en: { type: String, trim: true },
+        pronunciation: { type: String }
+      },
+      contact: {
+        line: { type: String, trim: true },
+        tel: { type: String, trim: true },
+        tg: { type: String, trim: true },
+        whatsapp: { type: String, trim: true },
+        email: { type: String, trim: true },
+      },
+    },
     players: [{
       id: { type: Schema.Types.ObjectId, ref: constants.DATABASE.COLLECTION.PLAYER },
       officialName: {
