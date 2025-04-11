@@ -7,6 +7,8 @@ import sessionRouter from './routes/sessions'
 import playerRouter from './routes/players'
 import matchRouter from './routes/matches'
 import userRouter from './routes/users'
+import tournamentRouter from './routes/tournaments'
+import eventRouter from './routes/events'
 import './utils/database'
 
 const app = express()
@@ -26,6 +28,8 @@ app.use('/api/sessions', sessionRouter)
 app.use('/api/players', playerRouter)
 app.use('/api/matches', matchRouter)
 app.use('/api/users', userRouter)
+app.use('/api/tournaments', tournamentRouter)
+app.use('/api/events', eventRouter)
 
 
 

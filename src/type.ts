@@ -34,7 +34,7 @@ export interface Player {
 }
 
 export type NewPlayer = Omit<Player, 'id'>;
-export type NonSensitivePlayer = Omit<Player, 'contact' | 'gender' | 'dob' | 'userID'>;
+export type NonSensitivePlayer = Omit<Player, 'contact' | 'dob' | 'userID'>;
 
 export interface User {
   id: Types.ObjectId;
@@ -87,3 +87,186 @@ export interface MailOptions extends MailContent {
     address: string;
   }
 }
+
+export interface Venue {
+  id: Types.ObjectId;
+  name: {
+    local: string;
+    en: string;
+  },
+  address: string;
+  location: {
+    type: string; // Point
+    coordinates: [number, number];  // [longitude, latitude]
+  },
+}
+
+export enum TournamentStatus {
+  Preparation = 'preparation',
+  RegistrationOpen = 'registrationOpen',
+  RegistrationClose = 'registrationClose',
+  SchedulePublished = 'schedulePublished',
+  Ongoing = 'ongoing',
+  Finished = 'finished'
+}
+
+export enum TournamentQuery {
+  Recent = 'recent',
+  ThisWeek = 'thisWeek',
+  RegistrationOpen = 'registrationOpen'
+}
+
+export type SimplePlayer = Pick<Player, 'id' | 'officialName' | 'displayName' | 'photo'>;
+export type ContactPlayer = Pick<Player, 'id' | 'officialName' | 'displayName' | 'contact' | 'photo'>;
+
+export type SimpleEvent = Pick<Event, 'id' | 'name' | 'fee'>
+export interface TournamentParticipant extends SimplePlayer {
+  events: [SimpleEvent];
+  contactPerson: ContactPlayer;
+  matches: [TournamentMatch]
+}
+
+export enum BillingMethod {
+  Pair = 'pair',
+  Individual = 'individual'
+}
+
+export interface Tournament {
+  id: Types.ObjectId;
+  name: {
+    local: string;
+    en?: string;
+  };
+  venue: Venue;
+  startDate: Date;
+  endDate: Date;
+  deadlineDate: Date;
+  image?: string;
+  logo?: string;
+  poster?: string;
+  shuttlecockFee?: number;
+  useHandicap?: boolean;
+  status?: TournamentStatus;
+  showParticipantList: boolean;
+  managers?: [SimplePlayer];
+  umpires?: [SimplePlayer];
+  creator: SimplePlayer;
+  contact: ContactPlayer;
+  participants: [TournamentParticipant];
+  billingMethod: BillingMethod;
+}
+
+export type NewTournament = Omit<Tournament, 'id'>;
+
+export enum EventFormat {
+  Group = 'group',
+  GroupPlayoff = 'groupPlayoff',
+  GroupPlayoffConsolation = 'groupPlayoffConsolation',
+  SingleElimination = 'singleElim'
+}
+
+export enum EventType {
+  Single = 'single',
+  Double = 'double'
+}
+
+export enum EventStatus {
+  Group = 'group',
+  Playoff = 'playoff',
+  Finished = 'finished'
+}
+
+
+export enum TeamStatus {
+  Idle = 'idle',
+  Reject = 'reject',
+  approved = 'approved',
+  withdraw = 'withdraw',
+}
+export type SimpleTournament = Pick<Tournament, 'id' | 'name' | 'shuttlecockFee' | 'billingMethod' | 'showParticipantList'>;
+
+export interface Event {
+  id: Types.ObjectId;
+  tournament: SimpleTournament;
+  name: {
+    local: string;
+    en?: string;
+  };
+  level?: number;
+  fee: {
+    amount: number;
+    currency: string;
+  };
+  prize: string;
+  format: EventFormat;
+  limit: number;
+  type: EventType;
+  status: EventStatus;
+  teams: [{
+    id: Types.ObjectId;
+    players: [NonSensitivePlayer]
+    status: TeamStatus
+  }];
+}
+export type NewEvent = Omit<Event, 'id'>;
+export interface Team {
+  id: Types.ObjectId;
+  players: [NonSensitivePlayer]
+}
+
+export enum MatchStatus {
+  Waiting = 'waiting',
+  Playing = 'playing',
+  Finished = 'finished'
+}
+export interface BaseMatch {
+  id: Types.ObjectId;
+  shuttlecockUsed: number;
+  level: number;
+  scoreLavel: [string];
+  status: MatchStatus;
+  court: string;
+  note: string;
+  teamA: {
+    id: Types.ObjectId;
+    players: [NonSensitivePlayer];
+    serving: number;
+    receiving: number;
+    isServing: boolean;
+  };
+  teamB: {
+    id: Types.ObjectId;
+    players: [NonSensitivePlayer];
+    serving: number;
+    receiving: number;
+    isServing: boolean;
+  }
+}
+export enum TournamentMatchStep {
+  Group = 'group',
+  Playoff = 'playoff',
+  Consolation = 'consolation'
+}
+export interface TournamentMatch extends BaseMatch {
+  event: SimpleEvent;
+  matchNumber: number;
+  date: Date;
+  umpire: SimplePlayer;
+  step: TournamentMatchStep;
+  skip: boolean;
+  byePosition: number;
+  round: number; // power of 2
+  groupOrder: number;
+  eventOrder: number;
+  bracketOrder: number;
+}
+
+export interface SessionMatch extends BaseMatch {
+  session: {
+    id: Types.ObjectId;
+    name: string;
+  }
+}
+
+export type Match = TournamentMatch | SessionMatch
+

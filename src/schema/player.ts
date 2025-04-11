@@ -9,7 +9,7 @@ export interface PlayerDocument extends NewPlayer, Document {
 const playerSchema = new Schema<PlayerDocument>({
   officialName: {
     local: { type: String, required: true, trim: true },
-    en: { type: String, required: true, trim: true },
+    en: { type: String, trim: true },
     pronunciation: { type: String }
   },
   level: { type: Number, required: true, default: 0 },

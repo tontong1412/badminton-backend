@@ -2,6 +2,9 @@ const DATABASE  = {
   COLLECTION: {
     PLAYER: 'player',
     USER: 'user',
+    TOURNAMENT: 'tournament',
+    VENUE: 'venue',
+    TEAM: 'team'
   }
 }
 
