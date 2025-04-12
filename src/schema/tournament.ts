@@ -25,6 +25,19 @@ const tournamentSchema = new Schema<TournamentDocument>({
       coordinates: [Number, Number]  // [longitude, latitude]
     },
   },
+  events:[{
+    id:{ type: Schema.Types.ObjectId, ref: constants.DATABASE.COLLECTION.EVENT },
+    description: String,
+    name:{
+      en: String,
+      local: String,
+    },
+    fee: {
+      amount: Number,
+      currency: String,
+    },
+    prize: String
+  }],
   startDate: Date,
   endDate: Date,
   deadlineDate: Date,

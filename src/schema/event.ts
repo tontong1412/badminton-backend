@@ -7,6 +7,7 @@ export interface EventDocument extends NewEvent, Document {}
 const eventSchema = new Schema<EventDocument>({
   tournament: {
     id:  { type: Schema.Types.ObjectId, ref: constants.DATABASE.COLLECTION.TOURNAMENT },
+    description: String,
     name: {
       local: String,
       en: String,

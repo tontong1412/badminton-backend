@@ -57,6 +57,8 @@ export interface Login {
 export interface LoginResponse {
   accessToken: string;
   refreshToken: string;
+  user: TokenPayload;
+  player: Player | null
 }
 
 export interface ErrorResponse {
@@ -119,7 +121,7 @@ export enum TournamentQuery {
 export type SimplePlayer = Pick<Player, 'id' | 'officialName' | 'displayName' | 'photo'>;
 export type ContactPlayer = Pick<Player, 'id' | 'officialName' | 'displayName' | 'contact' | 'photo'>;
 
-export type SimpleEvent = Pick<Event, 'id' | 'name' | 'fee'>
+export type SimpleEvent = Pick<Event, 'id' | 'name' | 'fee' >
 export interface TournamentParticipant extends SimplePlayer {
   events: [SimpleEvent];
   contactPerson: ContactPlayer;
@@ -131,12 +133,15 @@ export enum BillingMethod {
   Individual = 'individual'
 }
 
+export type TournamentEvent = Pick<Event, 'id' | 'name' | 'fee' | 'prize' | 'description'>
+
 export interface Tournament {
   id: Types.ObjectId;
   name: {
     local: string;
     en?: string;
   };
+  events: [TournamentEvent]
   venue: Venue;
   startDate: Date;
   endDate: Date;
@@ -187,6 +192,7 @@ export type SimpleTournament = Pick<Tournament, 'id' | 'name' | 'shuttlecockFee'
 
 export interface Event {
   id: Types.ObjectId;
+  description: string;
   tournament: SimpleTournament;
   name: {
     local: string;

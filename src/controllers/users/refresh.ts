@@ -1,8 +1,9 @@
 import { NextFunction, Response } from 'express'
-import { ErrorResponse, LoginResponse, RequestWithCookies } from '../../type'
+import { ErrorResponse, LoginResponse, Player, RequestWithCookies } from '../../type'
 import tokenUtils from '../../utils/token'
 import config from '../../config'
 import constants from '../../constants'
+import PlayerModel from '../../schema/player'
 
 const refresh = async(
   req: RequestWithCookies,
@@ -57,7 +58,14 @@ const refresh = async(
       sameSite: 'strict'
     })
 
-    res.json({ accessToken: newAccessToken, refreshToken: newRefreshToken })
+    const player = await PlayerModel.findById(userPayload.playerID)
+
+    res.json({
+      accessToken: newAccessToken,
+      refreshToken: newRefreshToken,
+      user: userPayload,
+      player: player ? player.toJSON() as Player : null,
+    })
   } catch (error) {
     next(error)
   }

@@ -4,7 +4,8 @@ const DATABASE  = {
     USER: 'user',
     TOURNAMENT: 'tournament',
     VENUE: 'venue',
-    TEAM: 'team'
+    TEAM: 'team',
+    EVENT: 'event'
   }
 }
 

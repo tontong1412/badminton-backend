@@ -1,11 +1,12 @@
 import argon2 from 'argon2'
 import UserModel from '../../schema/user'
-import { ErrorResponse, Login, LoginResponse, TokenPayload } from '../../type'
+import { ErrorResponse, Login, LoginResponse, Player, TokenPayload } from '../../type'
 import { NextFunction, Request, Response } from 'express'
 import config from '../../config'
 import tokenUtils from '../../utils/token'
 import constants from '../../constants'
 import { Types } from 'mongoose'
+import PlayerModel from '../../schema/player'
 
 const login = async(
   req: Request<unknown, unknown, Login, unknown>,
@@ -49,9 +50,13 @@ const login = async(
       sameSite: 'strict'
     })
 
+    const player = await PlayerModel.findById(userPayload.playerID)
+
     res.json({
       accessToken,
-      refreshToken
+      refreshToken,
+      user: userPayload,
+      player: player ? player.toJSON() as Player : null,
     })
     return
 

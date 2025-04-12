@@ -24,6 +24,20 @@ const create =  async(
 
 
   const newEvent = await eventService.create(req.body)
+  await TournamentModel.findByIdAndUpdate(
+    req.body.tournament.id,
+    {
+      $push: {
+        events: {
+          id: newEvent.id,
+          fee: newEvent.fee,
+          prize: newEvent.prize,
+          name: newEvent.name,
+          description: newEvent.description
+        }
+      }
+    }
+  )
   res.send(newEvent)
 }
 
