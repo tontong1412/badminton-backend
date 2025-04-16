@@ -3,7 +3,7 @@ import PlayerModel, { PlayerDocument } from '../schema/player'
 
 const getNonSensitivePlayers = async(): Promise<NonSensitivePlayer[]> => {
   try{
-    const players = await PlayerModel.find({})
+    const players = await PlayerModel.find({ userID:{ $ne:null } }).select({ dob: 0, contact: 0, userID: 0, createdAt: 0, updatedAt: 0, __v: 0 })
     const playersJSON: NonSensitivePlayer[] = players.map((player) => player.toJSON() as NonSensitivePlayer)
     return playersJSON
   }
