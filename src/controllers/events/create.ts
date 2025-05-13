@@ -33,7 +33,8 @@ const create =  async(
           fee: newEvent.fee,
           prize: newEvent.prize,
           name: newEvent.name,
-          description: newEvent.description
+          description: newEvent.description,
+          type: newEvent.type,
         }
       }
     }

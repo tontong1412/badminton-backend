@@ -10,8 +10,9 @@ interface RegisterPayload {
   players: [{
     id?: string;
     officialName: {
-      local: string;
+      th: string;
       en: string;
+      pronunciation: string;
     }
     gender: Gender;
     dob?: string;

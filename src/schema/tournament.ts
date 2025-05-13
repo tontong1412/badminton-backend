@@ -1,18 +1,19 @@
 import mongoose, { Document, Schema } from 'mongoose'
-import { NewTournament, TournamentStatus } from '../type'
+import { BillingMethod, EventType, NewTournament, TournamentStatus } from '../type'
 import constants from '../constants'
 
 export interface TournamentDocument extends NewTournament, Document {}
 
 const tournamentSchema = new Schema<TournamentDocument>({
+  language: String,
   name: {
-    local: { type: String, required: true, trim: true },
+    th: { type: String, required: true, trim: true },
     en: { type: String, required: true, trim: true },
   },
   venue: {
     id: { type: Schema.Types.ObjectId, ref: constants.DATABASE.COLLECTION.VENUE },
     name: {
-      local: String,
+      th: String,
       en: String,
     },
     address: String,
@@ -30,14 +31,24 @@ const tournamentSchema = new Schema<TournamentDocument>({
     description: String,
     name:{
       en: String,
-      local: String,
+      th: String,
     },
     fee: {
       amount: Number,
       currency: String,
     },
-    prize: String
+    prize: String,
+    type: {
+      type: String,
+      enum: Object.values(EventType),
+      default: EventType.Double
+    },
   }],
+  billingMethod: {
+    type: String,
+    enum: Object.values(BillingMethod),
+    default: BillingMethod.Pair
+  },
   startDate: Date,
   endDate: Date,
   deadlineDate: Date,
@@ -55,12 +66,12 @@ const tournamentSchema = new Schema<TournamentDocument>({
   managers: [{
     id: { type: Schema.Types.ObjectId, ref: constants.DATABASE.COLLECTION.PLAYER },
     officialName: {
-      local: { type: String, required: true, trim: true },
+      th: { type: String, trim: true },
       en: { type: String, trim: true },
       pronunciation: { type: String }
     },
     displayName:{
-      local: { type: String, trim: true },
+      th: { type: String, trim: true },
       en: { type: String, trim: true },
       pronunciation: { type: String }
     },
@@ -68,12 +79,12 @@ const tournamentSchema = new Schema<TournamentDocument>({
   umpires: [{
     id: { type: Schema.Types.ObjectId, ref: constants.DATABASE.COLLECTION.PLAYER },
     officialName: {
-      local: { type: String, required: true, trim: true },
+      th: { type: String, trim: true },
       en: { type: String, trim: true },
       pronunciation: { type: String }
     },
     displayName:{
-      local: { type: String, trim: true },
+      th: { type: String, trim: true },
       en: { type: String, trim: true },
       pronunciation: { type: String }
     },
@@ -81,12 +92,12 @@ const tournamentSchema = new Schema<TournamentDocument>({
   creator: {
     id: { type: Schema.Types.ObjectId, ref: constants.DATABASE.COLLECTION.PLAYER },
     officialName: {
-      local: { type: String, required: true, trim: true },
+      th: { type: String, trim: true },
       en: { type: String, trim: true },
       pronunciation: { type: String }
     },
     displayName:{
-      local: { type: String, trim: true },
+      th: { type: String, trim: true },
       en: { type: String, trim: true },
       pronunciation: { type: String }
     },
@@ -94,12 +105,12 @@ const tournamentSchema = new Schema<TournamentDocument>({
   contact: {
     id: { type: Schema.Types.ObjectId, ref: constants.DATABASE.COLLECTION.PLAYER },
     officialName: {
-      local: { type: String, required: true, trim: true },
+      th: { type: String, trim: true },
       en: { type: String, trim: true },
       pronunciation: { type: String }
     },
     displayName:{
-      local: { type: String, trim: true },
+      th: { type: String, trim: true },
       en: { type: String, trim: true },
       pronunciation: { type: String }
     },

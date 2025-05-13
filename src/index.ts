@@ -13,7 +13,10 @@ import './utils/database'
 
 const app = express()
 
-app.use(cors())
+app.use(cors({
+  origin: 'http://localhost:3000', // 👈 must be exact origin
+  credentials: true                // 👈 this allows cookies
+}))
 app.use(express.json())
 app.use(cookieParser())
 

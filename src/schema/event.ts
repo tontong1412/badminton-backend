@@ -8,7 +8,7 @@ const eventSchema = new Schema<EventDocument>({
   tournament: {
     id:  { type: Schema.Types.ObjectId, ref: constants.DATABASE.COLLECTION.TOURNAMENT },
     name: {
-      local: String,
+      th: String,
       en: String,
     },
     shuttlecockFee: Number,
@@ -21,7 +21,7 @@ const eventSchema = new Schema<EventDocument>({
   },
   description: String,
   name: {
-    local: { type: String, required: true, trim: true },
+    th: { type: String, required: true, trim: true },
     en: { type: String, trim: true },
   },
   level: Number,
@@ -63,12 +63,12 @@ const eventSchema = new Schema<EventDocument>({
     contactPerson: {
       id: { type: Schema.Types.ObjectId, ref: constants.DATABASE.COLLECTION.PLAYER },
       officialName: {
-        local: { type: String, required: true, trim: true },
+        th: { type: String, trim: true },
         en: { type: String, trim: true },
         pronunciation: { type: String }
       },
       displayName:{
-        local: { type: String, trim: true },
+        th: { type: String, trim: true },
         en: { type: String, trim: true },
         pronunciation: { type: String }
       },
@@ -83,7 +83,7 @@ const eventSchema = new Schema<EventDocument>({
     players: [{
       id: { type: Schema.Types.ObjectId, ref: constants.DATABASE.COLLECTION.PLAYER },
       officialName: {
-        local: { type: String, required: true, trim: true },
+        th: { type: String, trim: true },
         en: { type: String, trim: true },
         pronunciation: { type: String }
       },
@@ -94,7 +94,7 @@ const eventSchema = new Schema<EventDocument>({
         required: true,
       },
       displayName:{
-        local: { type: String, trim: true },
+        th: { type: String, trim: true },
         en: { type: String, trim: true },
         pronunciation: { type: String }
       },

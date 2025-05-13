@@ -10,14 +10,14 @@ export interface Player {
   id: Types.ObjectId;
   userID?: Types.ObjectId;
   officialName: {
-    local: string;
+    th?: string;
     en?: string;
     pronunciation?: string;
   };
   level: number;
   gender: Gender;
   displayName?: {
-    local?: string;
+    th?: string;
     en?: string;
     pronunciation?: string;
   }
@@ -93,7 +93,7 @@ export interface MailOptions extends MailContent {
 export interface Venue {
   id: Types.ObjectId;
   name: {
-    local: string;
+    th: string;
     en: string;
   },
   address: string;
@@ -133,12 +133,13 @@ export enum BillingMethod {
   Individual = 'individual'
 }
 
-export type TournamentEvent = Pick<Event, 'id' | 'name' | 'fee' | 'prize' | 'description'>
+export type TournamentEvent = Pick<Event, 'id' | 'name' | 'fee' | 'prize' | 'description' | 'type'>
 
 export interface Tournament {
+  language: string;
   id: Types.ObjectId;
   name: {
-    local: string;
+    th?: string;
     en?: string;
   };
   events: [TournamentEvent]
@@ -188,14 +189,14 @@ export enum TeamStatus {
   approved = 'approved',
   withdraw = 'withdraw',
 }
-export type SimpleTournament = Pick<Tournament, 'id' | 'name' | 'shuttlecockFee' | 'billingMethod' | 'showParticipantList'>;
+export type SimpleTournament = Pick<Tournament, 'id' | 'name' | 'shuttlecockFee' | 'billingMethod' | 'showParticipantList' | 'language'>;
 
 export interface Event {
   id: Types.ObjectId;
   description: string;
   tournament: SimpleTournament;
   name: {
-    local: string;
+    th?: string;
     en?: string;
   };
   level?: number;
