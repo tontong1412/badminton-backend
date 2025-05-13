@@ -1,6 +1,8 @@
 import * as dotenv from 'dotenv'
 dotenv.config()
 
+const NODE_PORT = process.env.PORT || 8080
+
 const DATABASE = {
   URI: process.env.DB_URI || 'mongodb://localhost:27017/badminton',
   REDIS_URL: process.env.REDIS_URL
@@ -20,6 +22,7 @@ const CLIENT = {
 }
 
 export default {
+  NODE_PORT,
   NODE_ENV,
   DATABASE,
   ACCESS_SECRET,

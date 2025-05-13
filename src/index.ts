@@ -9,18 +9,17 @@ import matchRouter from './routes/matches'
 import userRouter from './routes/users'
 import tournamentRouter from './routes/tournaments'
 import eventRouter from './routes/events'
+import config from './config'
 import './utils/database'
 
 const app = express()
 
 app.use(cors({
-  origin: 'http://localhost:3000', // 👈 must be exact origin
+  origin: config.CLIENT.URL, // 👈 must be exact origin
   credentials: true                // 👈 this allows cookies
 }))
 app.use(express.json())
 app.use(cookieParser())
-
-const PORT = 8080
 
 app.get('/ping', (_req, res) => {
   console.log('someone pinged here')
@@ -38,6 +37,6 @@ app.use('/api/events', eventRouter)
 
 app.use(middlewares.errorHandler)
 
-app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`)
+app.listen(config.NODE_PORT, () => {
+  console.log(`Server running on port ${config.NODE_PORT}`)
 })
