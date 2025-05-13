@@ -26,12 +26,12 @@ app.get('/ping', (_req, res) => {
   res.send('pong')
 })
 
-app.use('/api/sessions', sessionRouter)
-app.use('/api/players', playerRouter)
-app.use('/api/matches', matchRouter)
-app.use('/api/users', userRouter)
-app.use('/api/tournaments', tournamentRouter)
-app.use('/api/events', eventRouter)
+app.use('/sessions', sessionRouter)
+app.use('/players', playerRouter)
+app.use('/matches', matchRouter)
+app.use('/users', userRouter)
+app.use('/tournaments', tournamentRouter)
+app.use('/events', eventRouter)
 
 
 
