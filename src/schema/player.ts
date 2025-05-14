@@ -16,7 +16,6 @@ const playerSchema = new Schema<PlayerDocument>({
   gender: {
     type: String,
     enum: Object.values(Gender),
-    required: true,
   },
   displayName:{
     th: { type: String, trim: true },

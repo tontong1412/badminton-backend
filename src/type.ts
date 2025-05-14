@@ -15,7 +15,7 @@ export interface Player {
     pronunciation?: string;
   };
   level: number;
-  gender: Gender;
+  gender?: Gender;
   displayName?: {
     th?: string;
     en?: string;
