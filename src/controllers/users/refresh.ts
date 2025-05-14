@@ -48,14 +48,14 @@ const refresh = async(
       httpOnly: true,
       secure: config.NODE_ENV === 'production',
       maxAge: config.NODE_ENV === 'production' ? constants.TOKEN.EXPIRE_TIME.ACCESS : 60 * 1000, // 1 minute in development,
-      sameSite: 'strict'
+      sameSite: config.NODE_ENV === 'production' ? 'none' : 'strict'
     })
 
     res.cookie('refresh', newRefreshToken, {
       httpOnly: true,
       secure: config.NODE_ENV === 'production',
-      maxAge: config.NODE_ENV === 'production' ? constants.TOKEN.EXPIRE_TIME.ACCESS : 60 * 1000, // 1 minute in development,
-      sameSite: 'strict'
+      maxAge: config.NODE_ENV === 'production' ? constants.TOKEN.EXPIRE_TIME.REFRESH : 60 * 1000, // 1 minute in development,
+      sameSite: config.NODE_ENV === 'production' ? 'none' : 'strict'
     })
 
     const player = await PlayerModel.findById(userPayload.playerID)
@@ -67,6 +67,7 @@ const refresh = async(
       player: player ? player.toJSON() as Player : null,
     })
   } catch (error) {
+    console.log(error)
     next(error)
   }
 }

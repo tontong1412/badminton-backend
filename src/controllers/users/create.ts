@@ -59,14 +59,14 @@ const createUser = async(
       httpOnly: true,
       secure: config.NODE_ENV === 'production',
       maxAge: config.NODE_ENV === 'production' ? constants.TOKEN.EXPIRE_TIME.ACCESS : 30 * 60 * 1000, // 30 minute in development,
-      sameSite: 'none'
+      sameSite: config.NODE_ENV === 'production' ? 'none' : 'strict'
     })
 
     res.cookie('refresh', refreshToken, {
       httpOnly: true,
       secure: config.NODE_ENV === 'production',
-      maxAge: config.NODE_ENV === 'production' ? constants.TOKEN.EXPIRE_TIME.ACCESS : 30 * 60 * 1000, // 30 minute in development,
-      sameSite: 'none'
+      maxAge: config.NODE_ENV === 'production' ? constants.TOKEN.EXPIRE_TIME.REFRESH : 30 * 60 * 1000, // 30 minute in development,
+      sameSite: config.NODE_ENV === 'production' ? 'none' : 'strict'
     })
 
     res.json({

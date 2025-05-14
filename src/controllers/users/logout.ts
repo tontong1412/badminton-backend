@@ -12,12 +12,12 @@ const logout = async(
   res.clearCookie('refresh', {
     httpOnly: true,
     secure: config.NODE_ENV === 'production',
-    sameSite: 'strict'
+    sameSite: config.NODE_ENV === 'production' ? 'none' : 'strict'
   })
   res.clearCookie('access', {
     httpOnly: true,
     secure: config.NODE_ENV === 'production',
-    sameSite: 'strict'
+    sameSite: config.NODE_ENV === 'production' ? 'none' : 'strict'
   })
   await tokenUtils.deleteRefreshToken(req.body.userId)
   res.json({ message: 'Logged out' })
