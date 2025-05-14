@@ -1,5 +1,7 @@
 import { NewPlayer, NonSensitivePlayer } from '../type'
 import PlayerModel, { PlayerDocument } from '../schema/player'
+import mediaUtils from '../utils/media'
+import config from '../config'
 
 const getNonSensitivePlayers = async(): Promise<NonSensitivePlayer[]> => {
   try{
@@ -17,10 +19,21 @@ const getNonSensitivePlayers = async(): Promise<NonSensitivePlayer[]> => {
 }
 
 const createPlayer = async(playerObject: NewPlayer): Promise<NonSensitivePlayer> => {
+  const photo = playerObject.photo
+
+  delete playerObject.photo
   const newPlayer = new PlayerModel(playerObject)
+
 
   try{
     const savedPlayer = await newPlayer.save()
+
+    if(photo){
+      const uploadResult = await mediaUtils.uploadPhoto(photo, `${config.CLOUDINARY_PREFIX}players`, savedPlayer._id as string)
+      const url = mediaUtils.getOptimizedUrl(uploadResult.public_id, uploadResult.version)
+      const updatedPlayer = await PlayerModel.findByIdAndUpdate(savedPlayer._id, { photo: url }, { new:true })
+      savedPlayer.photo = updatedPlayer?.photo
+    }
     const nonSensitiveSavedPlayer = {
       id: savedPlayer._id,
       officialName: savedPlayer.officialName,

@@ -12,6 +12,9 @@ const ACCESS_SECRET = process.env.ACCESS_SECRET || null
 const REFRESH_SECRET = process.env.REFRESH_SECRET || null
 const NODE_ENV = process.env.NODE_ENV || 'development'
 
+const CLOUDINARY_URL = process.env.CLOUDINARY_URL || null
+const CLOUDINARY_PREFIX = process.env.CLOUDINARY_PREFIX || 'local-new'
+
 const EMAIL = {
   USER: process.env.EMAIL,
   PASSWORD: process.env.EMAIL_PASSWORD
@@ -28,5 +31,7 @@ export default {
   ACCESS_SECRET,
   REFRESH_SECRET,
   EMAIL,
-  CLIENT
+  CLIENT,
+  CLOUDINARY_PREFIX,
+  CLOUDINARY_URL
 }

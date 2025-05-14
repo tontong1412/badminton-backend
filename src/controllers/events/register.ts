@@ -4,6 +4,8 @@ import playerService from '../../services/playerService'
 import PlayerModel from '../../schema/player'
 import TeamModel, { TeamDocument } from '../../schema/team'
 import EventModel from '../../schema/event'
+import mediaUtils from '../../utils/media'
+import config from '../../config'
 
 interface RegisterPayload {
   eventID: string;
@@ -43,6 +45,12 @@ const register = async(
     if(!player.id){ // player doesn't exist in the system
       const newPlayer = await playerService.createPlayer(player)
       return newPlayer
+    }
+
+    if(player.photo){
+      const uploadResult = await mediaUtils.uploadPhoto(player.photo, `${config.CLOUDINARY_PREFIX}players`, player.id)
+      const url = mediaUtils.getOptimizedUrl(uploadResult.public_id, uploadResult.version)
+      player.photo = url
     }
 
     const existingPlayer = await PlayerModel.findByIdAndUpdate(player.id, player, { new:true })
