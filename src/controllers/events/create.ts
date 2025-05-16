@@ -1,7 +1,8 @@
 import { Request, Response } from 'express'
-import {  ErrorResponse, Event, NewEvent, ResponseLocals } from '../../type'
+import { ErrorResponse, Event, NewEvent, ResponseLocals } from '../../type'
 import eventService from '../../services/eventService'
 import TournamentModel from '../../schema/tournament'
+import { Types } from 'mongoose'
 
 
 const create =  async(
@@ -11,7 +12,7 @@ const create =  async(
 
   const { user } = res.locals
 
-  const tournament = await TournamentModel.findById(req.body.tournament.id).select({ creator: 1, managers: 1 })
+  const tournament = await TournamentModel.findById(req.body.tournament.id).select({ creator: 1, managers: 1, name: 1, shuttlecockFee: 1, billingMethod: 1, showParticipantList: 1 })
   if(!tournament){
     res.status(404).json({ message: 'Tournament not found' })
     return
@@ -22,8 +23,21 @@ const create =  async(
     return
   }
 
+  const eventPayload = {
+    ...req.body,
+    tournament: {
+      id: tournament._id as Types.ObjectId,
+      name: tournament.name,
+      shuttlecockFee: tournament.shuttlecockFee,
+      billingMethod: tournament.billingMethod,
+      showParticipantList: tournament.showParticipantList,
+      language: tournament.language,
+      managers: tournament.managers
+    }
+  }
 
-  const newEvent = await eventService.create(req.body)
+
+  const newEvent = await eventService.create(eventPayload)
   await TournamentModel.findByIdAndUpdate(
     req.body.tournament.id,
     {

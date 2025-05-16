@@ -1,11 +1,12 @@
 import { Request, Response } from 'express'
-import { ContactPlayer, ErrorResponse, EventTeam, Gender, NonSensitivePlayer, ResponseLocals } from '../../type'
+import { ContactPlayer, ErrorResponse, EventTeam, Gender, NonSensitivePlayer, PaymentStatus, ResponseLocals } from '../../type'
 import playerService from '../../services/playerService'
 import PlayerModel from '../../schema/player'
 import TeamModel, { TeamDocument } from '../../schema/team'
 import EventModel from '../../schema/event'
 import mediaUtils from '../../utils/media'
 import config from '../../config'
+import moment from 'moment'
 
 interface RegisterPayload {
   eventID: string;
@@ -118,7 +119,8 @@ const register = async(
             id: teamObject._id,
             players: playersObject,
             contactPerson: nonSensitiveContactPerson,
-            paymentStatus: 'unpaid'
+            paymentStatus: PaymentStatus.Unpaid,
+            date: moment()
           }
         }
       },

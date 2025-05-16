@@ -189,7 +189,7 @@ export enum TeamStatus {
   approved = 'approved',
   withdraw = 'withdraw',
 }
-export type SimpleTournament = Pick<Tournament, 'id' | 'name' | 'shuttlecockFee' | 'billingMethod' | 'showParticipantList' | 'language'>;
+export type SimpleTournament = Pick<Tournament, 'id' | 'name' | 'shuttlecockFee' | 'billingMethod' | 'showParticipantList' | 'language' | 'managers'>;
 
 export interface Event {
   id: Types.ObjectId;
@@ -209,7 +209,7 @@ export interface Event {
   limit: number;
   type: EventType;
   status: EventStatus;
-  teams: [EventTeam];
+  teams: EventTeam[];
 }
 export type NewEvent = Omit<Event, 'id'>;
 export interface Team {
@@ -288,5 +288,7 @@ export interface EventTeam {
   contactPerson: ContactPlayer;
   status: TeamStatus;
   paymentStatus: PaymentStatus;
+  date: Date;
+  shuttlecockCredit: number;
 }
 

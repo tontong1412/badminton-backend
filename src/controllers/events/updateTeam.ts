@@ -1,6 +1,6 @@
 import { Request, Response } from 'express'
 import EventModel from '../../schema/event'
-import { ErrorResponse, EventTeam,  ResponseLocals } from '../../type'
+import { ErrorResponse, Event, ResponseLocals } from '../../type'
 
 interface UpdateTeamPayload {
   eventID: string;
@@ -11,7 +11,7 @@ interface UpdateTeamPayload {
 
 const updateTeam = async(
   req: Request<unknown, unknown, UpdateTeamPayload, unknown>,
-  res: Response<EventTeam | ErrorResponse, ResponseLocals>,
+  res: Response<Event | ErrorResponse, ResponseLocals>,
 ) => {
 
   const { body } = req
@@ -32,14 +32,18 @@ const updateTeam = async(
 
   if(updateResponse){
 
-    const teamResponse = updateResponse.teams.find((team) => team.id.toString() === body.teamID)
-    if(!teamResponse){
-      res.status(400).json({ message: 'Registration unsuccessful: please try again later' })
-      return
-    }
-    res.send(teamResponse)
+    // const teamResponse = updateResponse.teams.find((team) => team.id.toString() === body.teamID)
+    // if(!teamResponse){
+    //   res.status(400).json({ message: 'Update unsuccessful: please try again later' })
+    //   return
+    // }
+    // res.send(teamResponse)
+
+    res.send(updateResponse as Event)
     return
   }
+
+
 
   console.log(updateResponse)
 }

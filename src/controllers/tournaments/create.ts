@@ -20,6 +20,7 @@ const createTournament =  async(
   const newTournamentPayload: NewTournament = {
     ...req.body,
     creator: creator.toJSON() as SimplePlayer,
+    managers: [creator.toJSON() as SimplePlayer],
     status: TournamentStatus.Preparation,
   }
   const newTournament = await tournamentService.create(newTournamentPayload)

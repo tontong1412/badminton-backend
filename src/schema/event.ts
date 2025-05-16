@@ -18,6 +18,19 @@ const eventSchema = new Schema<EventDocument>({
       required: true,
     },
     showParticipantList: Boolean,
+    managers: [{
+      id: { type: Schema.Types.ObjectId, ref: constants.DATABASE.COLLECTION.PLAYER },
+      officialName: {
+        th: String,
+        en: String,
+        pronunciation: String,
+      },
+      displayName: {
+        th: String,
+        en: String,
+      },
+      photo: String
+    }]
   },
   description: String,
   name: {
@@ -48,6 +61,8 @@ const eventSchema = new Schema<EventDocument>({
   },
   teams: [{
     id: { type: Schema.Types.ObjectId, ref: constants.DATABASE.COLLECTION.TEAM },
+    date: Date,
+    shuttlecockCredit: { type: Number, default: 0 },
     status: {
       type: String,
       enum: Object.values(TeamStatus),
