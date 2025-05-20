@@ -36,12 +36,6 @@ const register = async(
     return
   }
 
-  const contactPerson = await PlayerModel.findByIdAndUpdate(req.body.contactPerson.id, req.body.contactPerson)
-  if(!contactPerson) {
-    res.status(404).json({ message: 'Contact person not found' })
-    return
-  }
-
   const playersObject: NonSensitivePlayer[] = await Promise.all(req.body.players.map(async(player) => {
     if(!player.id){ // player doesn't exist in the system
       const newPlayer = await playerService.createPlayer(player)
@@ -99,6 +93,12 @@ const register = async(
     return
   }
 
+  const contactPerson = await PlayerModel.findByIdAndUpdate(req.body.contactPerson.id, req.body.contactPerson, { new:true })
+  if(!contactPerson) {
+    res.status(404).json({ message: 'Contact person not found' })
+    return
+  }
+
   const nonSensitiveContactPerson = {
     id: contactPerson._id,
     officialName: contactPerson.officialName,
@@ -106,6 +106,8 @@ const register = async(
     contact: contactPerson.contact,
     photo: contactPerson.photo,
   }
+
+
 
   try{
     const updatedEvent = await EventModel.findOneAndUpdate(
