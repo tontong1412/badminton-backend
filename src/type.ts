@@ -160,6 +160,11 @@ export interface Tournament {
   contact: ContactPlayer;
   participants: [TournamentParticipant];
   billingMethod: BillingMethod;
+  payment: {
+    code: string,
+    name: string,
+    bank: string
+  },
 }
 
 export type NewTournament = Omit<Tournament, 'id'>;
@@ -189,7 +194,7 @@ export enum TeamStatus {
   approved = 'approved',
   withdraw = 'withdraw',
 }
-export type SimpleTournament = Pick<Tournament, 'id' | 'name' | 'shuttlecockFee' | 'billingMethod' | 'showParticipantList' | 'language' | 'managers'>;
+export type SimpleTournament = Pick<Tournament, 'id' | 'name' | 'shuttlecockFee' | 'billingMethod' | 'showParticipantList' | 'language' | 'managers' | 'payment'>;
 
 export interface Event {
   id: Types.ObjectId;
@@ -288,6 +293,7 @@ export interface EventTeam {
   contactPerson: ContactPlayer;
   status: TeamStatus;
   paymentStatus: PaymentStatus;
+  slip?: string;
   date: Date;
   shuttlecockCredit: number;
 }

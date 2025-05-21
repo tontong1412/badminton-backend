@@ -12,6 +12,11 @@ const eventSchema = new Schema<EventDocument>({
       en: String,
     },
     shuttlecockFee: Number,
+    payment: {
+      code: String,
+      name: String,
+      bank: String
+    },
     billingMethod: {
       type: String,
       enum: Object.values(BillingMethod),
@@ -75,6 +80,7 @@ const eventSchema = new Schema<EventDocument>({
       required: true,
       default: PaymentStatus.Unpaid
     },
+    slip: { type: String },
     contactPerson: {
       id: { type: Schema.Types.ObjectId, ref: constants.DATABASE.COLLECTION.PLAYER },
       officialName: {
