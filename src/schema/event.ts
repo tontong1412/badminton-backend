@@ -80,6 +80,7 @@ const eventSchema = new Schema<EventDocument>({
       required: true,
       default: PaymentStatus.Unpaid
     },
+    note: { type: String },
     slip: { type: String },
     contactPerson: {
       id: { type: Schema.Types.ObjectId, ref: constants.DATABASE.COLLECTION.PLAYER },

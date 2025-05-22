@@ -296,5 +296,6 @@ export interface EventTeam {
   slip?: string;
   date: Date;
   shuttlecockCredit: number;
+  note?: string;
 }
 
