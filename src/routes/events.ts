@@ -4,6 +4,7 @@ import middlewares from '../middlewares'
 
 const router = express.Router()
 
+router.get('/my-events', middlewares.auth, eventController.getMyEvents)
 router.get('/:id', eventController.getById)
 router.post('/', middlewares.auth, eventController.create)
 router.post('/register', middlewares.auth, eventController.register)
