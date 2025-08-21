@@ -82,6 +82,7 @@ const eventSchema = new Schema<EventDocument>({
     },
     note: { type: String },
     slip: { type: String },
+    slipTimestamp: { type: Date },
     contactPerson: {
       id: { type: Schema.Types.ObjectId, ref: constants.DATABASE.COLLECTION.PLAYER },
       officialName: {

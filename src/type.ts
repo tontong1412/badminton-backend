@@ -294,6 +294,7 @@ export interface EventTeam {
   status: TeamStatus;
   paymentStatus: PaymentStatus;
   slip?: string;
+  slipTimestamp?: Date;
   date: Date;
   shuttlecockCredit: number;
   note?: string;

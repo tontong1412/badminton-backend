@@ -3,6 +3,7 @@ import EventModel from '../../schema/event'
 import { ErrorResponse, Event, PaymentStatus, ResponseLocals } from '../../type'
 import mediaUtils from '../../utils/media'
 import config from '../../config'
+import moment from 'moment'
 
 interface UpdateTeamPayload {
   paymentStatus?: PaymentStatus;
@@ -30,9 +31,29 @@ const updateTeam = async(
   }
 
   if (body.field === 'slip') {
+    const event = await EventModel.findById(body.eventID).select('limit teams')
+    if(!event) {
+      res.status(404).send({ message: 'Event not found' })
+      return
+    }
+    const paidTeams = event.teams.filter((t) => t.paymentStatus === PaymentStatus.Paid || t.paymentStatus === PaymentStatus.Pending)
+    const currentTeam = event.teams.find((t) => t.id.toString() == body.teamID)
+    if(!currentTeam) {
+      res.status(404).send({ message: 'Team not found' })
+      return
+    }
+    if(paidTeams.length >= event.limit){
+      const previousNote = currentTeam.note || ''
+      const isSubstitute = previousNote.includes('สำรอง')
+      updateObj = {
+        ...updateObj,
+        'teams.$.note': isSubstitute ? previousNote : 'สำรอง' + (previousNote && ', ') + previousNote
+      }
+    }
     updateObj = {
       ...updateObj,
-      'teams.$.paymentStatus': body.paymentStatus
+      'teams.$.paymentStatus': body.paymentStatus,
+      'teams.$.slipTimestamp': moment()
     }
   }
 
@@ -57,10 +78,9 @@ const updateTeam = async(
 
     res.send(updateResponse as Event)
     return
+
   }
-
-
-
-  console.log(updateResponse)
+  res.status(404).send({ message: 'Event not found' })
+  return
 }
 export default updateTeam
