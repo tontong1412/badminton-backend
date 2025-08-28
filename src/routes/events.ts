@@ -9,6 +9,8 @@ router.get('/:id', eventController.getById)
 router.post('/', middlewares.auth, eventController.create)
 router.post('/register', middlewares.auth, eventController.register)
 router.post('/update-team', middlewares.auth, eventController.updateTeam)
+router.post('/update-shuttlecock', middlewares.auth, eventController.updateShuttlecock)
 router.post('/withdraw', middlewares.auth, eventController.withdrawTeam)
+
 
 export default router

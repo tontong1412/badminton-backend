@@ -4,6 +4,7 @@ import updateTeam from './updateTeam'
 import getEventById from './getByID'
 import getMyEvents from './getMyEvent'
 import withdrawTeam from './withdraw'
+import updateShuttlecock from './updateShuttlecockCredit'
 export default {
   create,
   register,
@@ -11,4 +12,5 @@ export default {
   getById: getEventById,
   getMyEvents,
   withdrawTeam,
+  updateShuttlecock,
 }
