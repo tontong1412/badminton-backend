@@ -1,5 +1,5 @@
 import mongoose, { Document, Schema } from 'mongoose'
-import { BillingMethod, EventType, NewTournament, TournamentStatus } from '../type'
+import { BillingMethod, EventFormat, EventType, NewTournament, TournamentStatus } from '../type'
 import constants from '../constants'
 
 export interface TournamentDocument extends NewTournament, Document {}
@@ -43,6 +43,11 @@ const tournamentSchema = new Schema<TournamentDocument>({
       enum: Object.values(EventType),
       default: EventType.Double
     },
+    limit: Number,
+    format: {
+      type: String,
+      enum: Object.values(EventFormat)
+    }
   }],
   billingMethod: {
     type: String,

@@ -133,7 +133,7 @@ export enum BillingMethod {
   Individual = 'individual'
 }
 
-export type TournamentEvent = Pick<Event, 'id' | 'name' | 'fee' | 'prize' | 'description' | 'type'>
+export type TournamentEvent = Pick<Event, 'id' | 'name' | 'fee' | 'prize' | 'description' | 'type' | 'limit' | 'format'>
 
 export interface Tournament {
   language: string;
@@ -235,28 +235,25 @@ export enum MatchStatus {
   Playing = 'playing',
   Finished = 'finished'
 }
+
+export interface MatchTeam {
+  id: Types.ObjectId;
+  players: NonSensitivePlayer[];
+  serving: number;
+  receiving: number;
+  isServing: boolean;
+}
 export interface BaseMatch {
   id: Types.ObjectId;
   shuttlecockUsed: number;
-  level: number;
-  scoreLavel: [string];
+  level?: number;
+  scoreLabel: string[];
   status: MatchStatus;
-  court: string;
-  note: string;
-  teamA: {
-    id: Types.ObjectId;
-    players: [NonSensitivePlayer];
-    serving: number;
-    receiving: number;
-    isServing: boolean;
-  };
-  teamB: {
-    id: Types.ObjectId;
-    players: [NonSensitivePlayer];
-    serving: number;
-    receiving: number;
-    isServing: boolean;
-  }
+  court?: string;
+  note?: string;
+  date?: Date;
+  teamA: MatchTeam | null;
+  teamB: MatchTeam | null;
 }
 export enum TournamentMatchStep {
   Group = 'group',
@@ -265,16 +262,15 @@ export enum TournamentMatchStep {
 }
 export interface TournamentMatch extends BaseMatch {
   event: SimpleEvent;
-  matchNumber: number;
-  date: Date;
-  umpire: SimplePlayer;
+  matchNumber?: number;
+  umpire?: SimplePlayer;
   step: TournamentMatchStep;
-  skip: boolean;
-  byePosition: number;
+  skip?: boolean;
+  byePosition?: number;
   round: number; // power of 2
-  groupOrder: number;
-  eventOrder: number;
-  bracketOrder: number;
+  groupOrder?: number;
+  eventOrder?: number;
+  bracketOrder?: number;
 }
 
 export interface SessionMatch extends BaseMatch {
@@ -284,7 +280,9 @@ export interface SessionMatch extends BaseMatch {
   }
 }
 
-export type Match = TournamentMatch | SessionMatch
+export type Match = TournamentMatch
+
+export type NewMatch = Omit<Match, 'id'>
 
 export enum PaymentStatus {
   Unpaid = 'unpaid',

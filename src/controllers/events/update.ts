@@ -1,0 +1,56 @@
+import { Request, Response } from 'express'
+import { ErrorResponse, Event, NewEvent, ResponseLocals } from '../../type'
+import TournamentModel from '../../schema/tournament'
+import { Types } from 'mongoose'
+import EventModel from '../../schema/event'
+
+const update =  async(
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  req: Request<any, unknown, NewEvent, unknown>,
+  res: Response<Event | ErrorResponse, ResponseLocals>
+) => {
+
+  const { user } = res.locals
+  // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+  const { id } = req.params
+
+  const tournament = await TournamentModel.findById(req.body.tournament.id).select({ creator: 1, managers: 1, name: 1, shuttlecockFee: 1, billingMethod: 1, showParticipantList: 1, payment: 1 })
+  if(!tournament){
+    res.status(404).json({ message: 'Tournament not found' })
+    return
+  }
+
+  if(user.playerID.toString() != tournament.creator.id.toString() || tournament.managers?.map((m) => m.id)?.includes(user.playerID)){
+    res.status(401).json({ message: 'Unauthorized: You do not have permission to create event to this tournament' })
+    return
+  }
+
+  const updatedEvent = await EventModel.findByIdAndUpdate(id, req.body, { new:true })
+  console.log(updatedEvent)
+  await TournamentModel.findByIdAndUpdate(
+    req.body.tournament.id,
+    {
+      $set: {
+        'events.$[elem].fee': updatedEvent?.fee,
+        'events.$[elem].prize': updatedEvent?.prize,
+        'events.$[elem].name': updatedEvent?.name,
+        'events.$[elem].description': updatedEvent?.description,
+        'events.$[elem].type': updatedEvent?.type,
+        'events.$[elem].limit': updatedEvent?.limit,
+        'events.$[elem].format': updatedEvent?.format
+      }
+    }, {
+      arrayFilters: [{
+        'elem.id': updatedEvent?.id as Types.ObjectId // Match the element by its 'id'
+      }]
+    }
+  )
+  if(!updatedEvent){
+    res.status(404).send({ message: 'event not found' })
+    return
+  }
+  res.send(updatedEvent as Event)
+  return
+}
+
+export default update

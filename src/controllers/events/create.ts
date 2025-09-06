@@ -50,6 +50,8 @@ const create =  async(
           name: newEvent.name,
           description: newEvent.description,
           type: newEvent.type,
+          limit: newEvent.limit,
+          format: newEvent.format
         }
       }
     }

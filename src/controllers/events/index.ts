@@ -6,8 +6,12 @@ import getMyEvents from './getMyEvent'
 import withdrawTeam from './withdraw'
 import updateShuttlecock from './updateShuttlecockCredit'
 import getRandomDraw from './randomDraw'
+import createMatches from './createMatch'
+import update from './update'
+import remove from './delete'
 export default {
   create,
+  update,
   register,
   updateTeam,
   getById: getEventById,
@@ -15,4 +19,6 @@ export default {
   withdrawTeam,
   updateShuttlecock,
   randomDraw: getRandomDraw,
+  generateMatches: createMatches,
+  remove
 }
