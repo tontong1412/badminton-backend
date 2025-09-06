@@ -4,6 +4,31 @@ import constants from '../constants'
 
 export interface EventDocument extends NewEvent, Document {}
 
+const teamSchema = {
+  id: { type: Schema.Types.ObjectId, ref: constants.DATABASE.COLLECTION.TEAM },
+  players:[{
+    id: { type: Schema.Types.ObjectId, ref: constants.DATABASE.COLLECTION.PLAYER },
+    officialName: {
+      th: { type: String, trim: true },
+      en: { type: String, trim: true },
+      pronunciation: { type: String }
+    },
+    level: { type: Number, required: true, default: 0 },
+    gender: {
+      type: String,
+      enum: Object.values(Gender),
+      required: true,
+    },
+    displayName:{
+      th: { type: String, trim: true },
+      en: { type: String, trim: true },
+      pronunciation: { type: String }
+    },
+    club: { type: String, trim: true },
+    photo: { type: String, trim: true },
+  }]
+}
+
 const eventSchema = new Schema<EventDocument>({
   tournament: {
     id:  { type: Schema.Types.ObjectId, ref: constants.DATABASE.COLLECTION.TOURNAMENT },
@@ -38,6 +63,12 @@ const eventSchema = new Schema<EventDocument>({
     }]
   },
   description: String,
+  draw: {
+    group: [[teamSchema]],
+    ko:[mongoose.Schema.Types.Mixed],
+    consolation: [mongoose.Schema.Types.Mixed],
+    elimination:[mongoose.Schema.Types.Mixed]
+  },
   name: {
     th: { type: String, required: true, trim: true },
     en: { type: String, trim: true },

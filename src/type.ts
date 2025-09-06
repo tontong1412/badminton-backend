@@ -215,11 +215,17 @@ export interface Event {
   type: EventType;
   status: EventStatus;
   teams: EventTeam[];
+  draw: {
+    group?: Team[][];
+    ko?: (Team | string)[];
+    consolation?: (Team | string)[];
+    elimination?: (Team |  string)[];
+  }
 }
 export type NewEvent = Omit<Event, 'id'>;
 export interface Team {
   id: Types.ObjectId;
-  players: [NonSensitivePlayer]
+  players: NonSensitivePlayer[]
 }
 
 export type NewTeam = Omit<Team, 'id'>

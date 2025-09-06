@@ -1,3 +1,5 @@
+import EVENT from './event'
+
 const DATABASE  = {
   COLLECTION: {
     PLAYER: 'player',
@@ -16,4 +18,4 @@ const TOKEN = {
   }
 }
 
-export default { DATABASE, TOKEN }
+export default { DATABASE, TOKEN, EVENT }

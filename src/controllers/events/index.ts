@@ -5,6 +5,7 @@ import getEventById from './getByID'
 import getMyEvents from './getMyEvent'
 import withdrawTeam from './withdraw'
 import updateShuttlecock from './updateShuttlecockCredit'
+import getRandomDraw from './randomDraw'
 export default {
   create,
   register,
@@ -13,4 +14,5 @@ export default {
   getMyEvents,
   withdrawTeam,
   updateShuttlecock,
+  randomDraw: getRandomDraw,
 }
