@@ -3,9 +3,9 @@ content-type: application/json
 
 {
   "officialName":{ 
-    "local": "Kaito Kuroba",
-    "en": "Kaito Kuroba"
+    "th": "นนท์นัดดา ศิลมัย",
+    "en": "Nonnadda Silamai"
   },
-  "gender": "male",
+  "gender": "female",
   "level": 3
 }

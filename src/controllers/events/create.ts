@@ -12,7 +12,7 @@ const create =  async(
 
   const { user } = res.locals
 
-  const tournament = await TournamentModel.findById(req.body.tournament.id).select({ creator: 1, managers: 1, name: 1, shuttlecockFee: 1, billingMethod: 1, showParticipantList: 1, payment: 1 })
+  const tournament = await TournamentModel.findById(req.body.tournament.id).select({ creator: 1, managers: 1, name: 1, shuttlecockFee: 1, billingMethod: 1, showParticipantList: 1, payment: 1 }).lean()
   if(!tournament){
     res.status(404).json({ message: 'Tournament not found' })
     return
