@@ -10,6 +10,11 @@ const tournamentSchema = new Schema<TournamentDocument>({
     th: { type: String, required: true, trim: true },
     en: { type: String, required: true, trim: true },
   },
+  payment: {
+    code: String,
+    name: String,
+    bank: String,
+  },
   venue: {
     id: { type: Schema.Types.ObjectId, ref: constants.DATABASE.COLLECTION.VENUE },
     name: {

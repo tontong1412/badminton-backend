@@ -1,6 +1,6 @@
 import { Request, Response } from 'express'
 import { Event, ResponseLocals } from '../../type'
-import TeamModel from '../../schema/team'
+import TeamModel, { TeamDocument } from '../../schema/team'
 import EventModel from '../../schema/event'
 import { Types } from 'mongoose'
 
@@ -12,40 +12,29 @@ const getMyEvents =  async(
 
   const teams = await TeamModel.find({ players: user.playerID }).select('_id')
 
-  const teamIDs = teams.map((t) => t._id)
+  const teamIDs = teams.map((t:TeamDocument) => (t._id as string).toString())
 
-  const myEvents = await EventModel.aggregate([
-    {
-      $match: {
-        'tournament.id': new Types.ObjectId(tournamentID as string),
-        $or: [
-          { 'teams.id': { $in: teamIDs } },
-          { 'teams.contactPerson.id': user.playerID }
-        ]
-      }
-    },
-    {
-      $addFields: {
-        teams: {
-          $filter: {
-            input: '$teams',
-            as: 'team',
-            cond: {
-              $or: [
-                { $in: ['$$team.id', teamIDs] },
-                { $eq: ['$$team.contactPerson.id', user.playerID] }
-              ]
-            }
-          }
-        }
-      }
+  const myEventsTest = await EventModel.find({
+    'tournament.id': new Types.ObjectId(tournamentID as string),
+    '$or': [
+      { 'teams.id': { $in: teamIDs } },
+      { 'teams.contactPerson.id': user.playerID }
+    ]
+  }).lean()
+
+  const myEventTyped: Event[] = myEventsTest.map((e) => ({ ...e, id: e._id }) as unknown as Event)
+
+  const myEventAggregated = myEventTyped.reduce((events: Event[], currentEvent: Event) : Event[] => {
+    const filteredTeams = currentEvent.teams.filter(((t) => teamIDs.includes(t.id.toString()) || t.contactPerson.id.toString() === user.playerID.toString()))
+    const modifiedEvent: Event = {
+      ...currentEvent,
+      teams: filteredTeams
     }
-  ])
+    events.push(modifiedEvent)
+    return events
+  }, [])
 
-  // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
-  const myEventsJson: Event[] = myEvents.map((e) => ({ ...e, id: e._id }) as Event)
-
-  res.send(myEventsJson)
+  res.send(myEventAggregated)
   return
 }
 

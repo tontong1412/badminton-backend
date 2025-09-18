@@ -40,7 +40,7 @@ const eventSchema = new Schema<EventDocument>({
     payment: {
       code: String,
       name: String,
-      bank: String
+      bank: String,
     },
     billingMethod: {
       type: String,
