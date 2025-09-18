@@ -14,7 +14,15 @@ const update =  async(
   // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
   const { id } = req.params
 
-  const tournament = await TournamentModel.findById(req.body.tournament.id).select({ creator: 1, managers: 1, name: 1, shuttlecockFee: 1, billingMethod: 1, showParticipantList: 1, payment: 1 }).lean()
+  const eventToUpdate = await EventModel.findById(id).select({ tournament:1 })
+
+  if(!eventToUpdate){
+    res.status(404).json({ message: 'Event not found' })
+    return
+  }
+
+  const tournament = await TournamentModel.findById(eventToUpdate.tournament.id).select({ creator: 1, managers: 1, name: 1, shuttlecockFee: 1, billingMethod: 1, showParticipantList: 1, payment: 1 }).lean()
+
   if(!tournament){
     res.status(404).json({ message: 'Tournament not found' })
     return
@@ -39,22 +47,27 @@ const update =  async(
     }
   }
 
-  const updatedEvent = await EventModel.findByIdAndUpdate(id, updateParam, { new:true })
+  const updatedEvent = await EventModel.findByIdAndUpdate(id, updateParam, { new:true }).select({ teams: 0 })
+  if(!updatedEvent){
+    res.status(404).json({ message: 'Event not found' })
+    return
+  }
+
   await TournamentModel.findByIdAndUpdate(
-    req.body.tournament.id,
+    tournament._id,
     {
       $set: {
-        'events.$[elem].fee': updatedEvent?.fee,
-        'events.$[elem].prize': updatedEvent?.prize,
-        'events.$[elem].name': updatedEvent?.name,
-        'events.$[elem].description': updatedEvent?.description,
-        'events.$[elem].type': updatedEvent?.type,
-        'events.$[elem].limit': updatedEvent?.limit,
-        'events.$[elem].format': updatedEvent?.format
+        'events.$[elem].fee': updatedEvent.fee,
+        'events.$[elem].prize': updatedEvent.prize,
+        'events.$[elem].name': updatedEvent.name,
+        'events.$[elem].description': updatedEvent.description,
+        'events.$[elem].type': updatedEvent.type,
+        'events.$[elem].limit': updatedEvent.limit,
+        'events.$[elem].format': updatedEvent.format
       }
     }, {
       arrayFilters: [{
-        'elem.id': updatedEvent?.id as Types.ObjectId // Match the element by its 'id'
+        'elem.id': updatedEvent._id // Match the element by its 'id'
       }]
     }
   )
