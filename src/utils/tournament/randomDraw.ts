@@ -22,6 +22,12 @@ const bracket = (teamList: (Team|string)[], { seed = false, seedCount = 2 } = {}
   const bracketSlot = Math.pow(2, Math.ceil(Math.log2(teamCount)))
   const draw:(Team | null | string)[]  = Array.from({ length: bracketSlot }, () => null)
 
+
+  const byePositions = findByePosition(bracketSlot - teamCount, bracketSlot)
+  for(let i = 0;i < byePositions.length;i++){
+    draw[byePositions[i]] = 'bye'
+  }
+
   if(seed){
     if (Math.log2(seedCount) % 1 != 0) {
       console.error('number should be in the form of 2^n')
@@ -35,10 +41,6 @@ const bracket = (teamList: (Team|string)[], { seed = false, seedCount = 2 } = {}
     }
   }
 
-  const byePositions = findByePosition(bracketSlot - teamCount, bracketSlot)
-  for(let i = 0;i < byePositions.length;i++){
-    draw[byePositions[i]] = 'bye'
-  }
 
   const remainingTeams: Team[]  = shuffle(teamList) as Team[]
   for(let i = 0;i < draw.length;i++){
@@ -71,19 +73,20 @@ const findByePosition = (byeCount: number, totalSlots: number): number[] => {
   if (section == 0) {
     checkCountandPush(1)
     checkCountandPush(totalSlots - 2)
-  }
-  for (let i = 0; i < section; i++) {
-    if (i == 0) {
-      checkCountandPush(i + 1)
-      checkCountandPush(totalSlots - 2)
-    } else {
-      for (let j = 0; j < Math.pow(2, i - 1); j++) {
-        const newBottom = (2 * j + 1) * totalSlots / Math.pow(2, i)
-        checkCountandPush(newBottom - 1)
-      }
-      for (let j = 0; j < Math.pow(2, i - 1); j++) {
-        const newBottom = (2 * j + 1) * totalSlots / Math.pow(2, i)
-        checkCountandPush(newBottom + 1)
+  }else{
+    for (let i = 0; i < section; i++) {
+      if (i == 0) {
+        checkCountandPush(i + 1)
+        checkCountandPush(totalSlots - 2)
+      } else {
+        for (let j = 0; j < Math.pow(2, i - 1); j++) {
+          const newBottom = (2 * j + 1) * totalSlots / Math.pow(2, i)
+          checkCountandPush(newBottom - 2)
+        }
+        for (let j = 0; j < Math.pow(2, i - 1); j++) {
+          const newBottom = (2 * j + 1) * totalSlots / Math.pow(2, i)
+          checkCountandPush(newBottom + 1)
+        }
       }
     }
   }
