@@ -55,14 +55,16 @@ const createMatches =  async(
             players: roundRobinTeam[roundRobinTeam.length - 1]?.players as NonSensitivePlayer[],
             serving: 0,
             receiving: 0,
-            isServing: true
+            isServing: true,
+            scoreSet: 0
           },
           teamB: {
             id: standTeam.id,
             players: standTeam?.players,
             serving: 0,
             receiving: 0,
-            isServing: true
+            isServing: true,
+            scoreSet: 0
           },
           shuttlecockUsed: 0,
           level: event.level,
@@ -85,14 +87,16 @@ const createMatches =  async(
             players: roundRobinTeam[roundRobinTeam.length - 2 - j]?.players as NonSensitivePlayer[],
             serving: 0,
             receiving: 0,
-            isServing: true
+            isServing: true,
+            scoreSet: 0,
           },
           teamB: {
             id: roundRobinTeam[j]?.id as Types.ObjectId,
             players: roundRobinTeam[j]?.players as NonSensitivePlayer[],
             serving: 0,
             receiving: 0,
-            isServing: true
+            isServing: true,
+            scoreSet: 0
           },
           shuttlecockUsed: 0,
           level: event.level,

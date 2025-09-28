@@ -154,8 +154,8 @@ export interface Tournament {
   useHandicap?: boolean;
   status?: TournamentStatus;
   showParticipantList: boolean;
-  managers?: [SimplePlayer];
-  umpires?: [SimplePlayer];
+  managers: [SimplePlayer];
+  umpires: [SimplePlayer];
   creator: SimplePlayer;
   contact: ContactPlayer;
   participants: [TournamentParticipant];
@@ -242,6 +242,7 @@ export interface MatchTeam {
   serving: number;
   receiving: number;
   isServing: boolean;
+  scoreSet: number;
 }
 export interface BaseMatch {
   id: Types.ObjectId;

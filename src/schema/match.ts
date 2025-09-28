@@ -31,7 +31,8 @@ const teamSchema = {
   serving: Number,
   receiving: Number,
   isServing: Boolean,
-  players:[playerSchema]
+  players:[playerSchema],
+  scoreSet: Number
 }
 
 const matchSchema = new Schema<MatchDocument>({

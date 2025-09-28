@@ -2,16 +2,14 @@ import { Request, Response } from 'express'
 import {  ErrorResponse, ResponseLocals, Tournament } from '../../type'
 import PlayerModel from '../../schema/player'
 import TournamentModel from '../../schema/tournament'
-import EventModel from '../../schema/event'
-import { Types } from 'mongoose'
 
-interface AddManagerBody {
+interface RemoveUmpireBody {
   playerID: string
   tournamentID: string
 }
 
-const addManager =  async(
-  req: Request<unknown, unknown, AddManagerBody, unknown>,
+const removeUmpire =  async(
+  req: Request<unknown, unknown, RemoveUmpireBody, unknown>,
   res: Response<Tournament | ErrorResponse, ResponseLocals>) => {
   const { user } = res.locals
 
@@ -26,8 +24,8 @@ const addManager =  async(
     return
   }
 
-  const newManager = await PlayerModel.findById(req.body.playerID).select({ id: 1, officialName: 1, displayName: 1, photo: 1 })
-  if(!newManager){
+  const umpireToRemove = await PlayerModel.findById(req.body.playerID).select({ id: 1 }).lean()
+  if(!umpireToRemove){
     res.status(400).json({
       message: 'User does not exist in our database'
     })
@@ -37,33 +35,12 @@ const addManager =  async(
   const updateResponse = await TournamentModel.findByIdAndUpdate(
     req.body.tournamentID,
     {
-      $addToSet: { managers: newManager.toJSON() }
+      $pull: {
+        umpires: { id: umpireToRemove._id }
+      }
     },
     { new: true }
   )
-
-  if(!updateResponse){
-    res.status(404).json({
-      message: 'Tournament not found'
-    })
-    return
-  }
-
-  await EventModel.updateMany({
-    'tournament.id': updateResponse._id
-  }, {
-    tournament: {
-      id: updateResponse._id as Types.ObjectId,
-      name: updateResponse.name,
-      shuttlecockFee: updateResponse.shuttlecockFee,
-      billingMethod: updateResponse.billingMethod,
-      showParticipantList: updateResponse.showParticipantList,
-      language: updateResponse.language,
-      managers: updateResponse.managers,
-      payment: updateResponse.payment
-    }
-  })
-
   if(updateResponse){
     res.send(updateResponse.toJSON() as Tournament)
     return
@@ -72,4 +49,4 @@ const addManager =  async(
   return
 }
 
-export default addManager
+export default removeUmpire

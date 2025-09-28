@@ -1,14 +1,14 @@
 import { Request, Response } from 'express'
 import MatchModel from '../../schema/match'
+import TournamentModel from '../../schema/tournament'
 
 const getMatches = async(
   req: Request,
   res: Response
 ) => {
-  const { eventID } = req.query
+  const { eventID, tournamentID } = req.query
   let queryParams = {
     ...req.query,
-
   }
   if(eventID){
     queryParams = {
@@ -16,6 +16,16 @@ const getMatches = async(
       'event.id': eventID
     }
     delete queryParams.eventID
+  }
+
+  if(tournamentID){
+    const tournament = await TournamentModel.findById(tournamentID).select({ events: 1 }).lean()
+    const eventIDs = tournament?.events.map((e) => e.id.toString()) || []
+    queryParams = {
+      ...queryParams,
+      'event.id': { $in: eventIDs }
+    }
+    delete queryParams.tournamentID
   }
 
 
