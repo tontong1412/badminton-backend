@@ -243,6 +243,7 @@ export interface MatchTeam {
   receiving: number;
   isServing: boolean;
   scoreSet: number;
+  score: number;
 }
 export interface BaseMatch {
   id: Types.ObjectId;

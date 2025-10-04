@@ -4,11 +4,13 @@ import middlewares from '../middlewares'
 
 const router = express.Router()
 
+router.get('/:id', matchControllers.getByID)
 router.get('/', matchControllers.get)
 
 router.post('/schedule', middlewares.auth, matchControllers.schedule)
 router.post('/assign-match-number', matchControllers.assignMatchNumber)
 router.put('/:id', middlewares.auth, matchControllers.update)
+router.post('/set-score', middlewares.auth, matchControllers.setScore)
 router.post('/', (_req, res) => {
   res.send('Saving a match!')
 })

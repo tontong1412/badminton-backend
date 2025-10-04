@@ -27,12 +27,16 @@ const update =  async(
     return
   }
 
-  if(!event.tournament.managers?.map((m) => m.id.toString()).includes(user.playerID.toString())){
-    res.status(401).json({ message: 'Unauthorized: You do not have permission to create event to this tournament' })
+  if(
+    !event.tournament.managers?.map((m) => m.id.toString()).includes(user.playerID.toString())
+    && matchToUpdate.umpire?.id.toString() !== user.playerID.toString()
+  ){
+    res.status(401).json({ message: 'Unauthorized: You do not have permission to update match' })
     return
   }
 
   const updatedMatch = await MatchModel.findByIdAndUpdate(id, req.body, { new:true })
+  console.log(updatedMatch)
   if(!updatedMatch){
     res.status(404).json({ message: 'Match not found' })
     return
