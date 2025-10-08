@@ -50,7 +50,7 @@ const setScore = async(
     && currentMatch.step !== TournamentMatchStep.Group
     && currentMatch.round
     && currentMatch.round > 2 // not final round
-    && currentMatch.bracketOrder
+    && (currentMatch.bracketOrder !== undefined)
   ){
     if (scoreSetA === scoreSetB) {
       res.status(400).send({ message:'should have winner for knock out round' })
@@ -60,7 +60,7 @@ const setScore = async(
     const nextMatchTeam = currentMatch.bracketOrder % 2 === 0 ? 'teamA' : 'teamB'
     await MatchModel.findOneAndUpdate(
       {
-        eventID: currentMatch.event.id,
+        'event.id': currentMatch.event.id,
         round: currentMatch.round / 2,
         step: currentMatch.step,
         bracketOrder: Math.floor(currentMatch.bracketOrder / 2)
