@@ -33,6 +33,7 @@ const teamSchema = {
   isServing: Boolean,
   players:[playerSchema],
   scoreSet: Number,
+  scoreDiff: Number,
   score: Number,
 }
 

@@ -57,7 +57,8 @@ const createMatches =  async(
             receiving: 0,
             isServing: true,
             scoreSet: 0,
-            score: 0
+            score: 0,
+            scoreDiff: 0
           },
           teamB: {
             id: standTeam.id,
@@ -66,7 +67,8 @@ const createMatches =  async(
             receiving: 0,
             isServing: true,
             scoreSet: 0,
-            score: 0
+            score: 0,
+            scoreDiff: 0,
           },
           shuttlecockUsed: 0,
           level: event.level,
@@ -91,7 +93,8 @@ const createMatches =  async(
             receiving: 0,
             isServing: true,
             scoreSet: 0,
-            score: 0
+            score: 0,
+            scoreDiff: 0,
           },
           teamB: {
             id: roundRobinTeam[j]?.id as Types.ObjectId,
@@ -100,7 +103,8 @@ const createMatches =  async(
             receiving: 0,
             isServing: true,
             scoreSet: 0,
-            score: 0
+            score: 0,
+            scoreDiff: 0,
           },
           shuttlecockUsed: 0,
           level: event.level,

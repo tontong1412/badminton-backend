@@ -244,6 +244,7 @@ export interface MatchTeam {
   isServing: boolean;
   scoreSet: number;
   score: number;
+  scoreDiff: number;
 }
 export interface BaseMatch {
   id: Types.ObjectId;
