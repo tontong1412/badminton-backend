@@ -13,64 +13,70 @@ const setScore = async(
   req: Request<any, unknown, SetScorePayload, unknown>,
   res: Response<TournamentMatch | ErrorResponse, ResponseLocals>
 ) => {
-  const { matchID, score, status } = req.body
+  try{
 
-  let scoreSetA = 0
-  let scoreSetB = 0
-  let scoreDiffA = 0
-  let scoreDiffB = 0
+    const { matchID, score, status } = req.body
 
-  score.forEach((set) => {
-    const [scoreA, scoreB] = set.split('-')
-    if (Number(scoreA) > Number(scoreB)) scoreSetA++
-    if (Number(scoreB) > Number(scoreA)) scoreSetB++
-    scoreDiffA = scoreDiffA + Number(scoreA) - Number(scoreB)
-    scoreDiffB = scoreDiffB + Number(scoreB) - Number(scoreA)
-  })
+    let scoreSetA = 0
+    let scoreSetB = 0
+    let scoreDiffA = 0
+    let scoreDiffB = 0
 
-  const currentMatch = await MatchModel.findByIdAndUpdate(
-    matchID,
-    {
-      'teamA.scoreSet': scoreSetA,
-      'teamB.scoreSet': scoreSetB,
-      'teamA.scoreDiff': scoreDiffA,
-      'teamB.scoreDiff': scoreDiffB,
-      status,
-      scoreLabel: score
-    },
-    { new:true }
-  )
+    score.forEach((set) => {
+      const [scoreA, scoreB] = set.split('-')
+      if (Number(scoreA) > Number(scoreB)) scoreSetA++
+      if (Number(scoreB) > Number(scoreA)) scoreSetB++
+      scoreDiffA = scoreDiffA + Number(scoreA) - Number(scoreB)
+      scoreDiffB = scoreDiffB + Number(scoreB) - Number(scoreA)
+    })
 
-  if(!currentMatch){
-    res.status(404).send({ message: 'Match not found' })
-    return
-  }
+    const currentMatch = await MatchModel.findByIdAndUpdate(
+      matchID,
+      {
+        'teamA.scoreSet': scoreSetA,
+        'teamB.scoreSet': scoreSetB,
+        'teamA.scoreDiff': scoreDiffA,
+        'teamB.scoreDiff': scoreDiffB,
+        status,
+        scoreLabel: score
+      },
+      { new:true }
+    )
 
-  if(status === MatchStatus.Finished
+    if(!currentMatch){
+      res.status(404).send({ message: 'Match not found' })
+      return
+    }
+
+    if(status === MatchStatus.Finished
     && currentMatch.step !== TournamentMatchStep.Group
     && currentMatch.round
     && currentMatch.round > 2 // not final round
     && (currentMatch.bracketOrder !== undefined)
-  ){
-    if (scoreSetA === scoreSetB) {
-      res.status(400).send({ message:'should have winner for knock out round' })
-      return
-    }
-    const winTeam = scoreSetA > scoreSetB ? 'teamA' : 'teamB'
-    const nextMatchTeam = currentMatch.bracketOrder % 2 === 0 ? 'teamA' : 'teamB'
-    await MatchModel.findOneAndUpdate(
-      {
-        'event.id': currentMatch.event.id,
-        round: currentMatch.round / 2,
-        step: currentMatch.step,
-        bracketOrder: Math.floor(currentMatch.bracketOrder / 2)
-      },
-      {
-        [`${nextMatchTeam}`]: currentMatch[winTeam]
+    ){
+      if (scoreSetA === scoreSetB) {
+        res.status(400).send({ message:'should have winner for knock out round' })
+        return
       }
-    )
+      const winTeam = scoreSetA > scoreSetB ? 'teamA' : 'teamB'
+      const nextMatchTeam = currentMatch.bracketOrder % 2 === 0 ? 'teamA' : 'teamB'
+      await MatchModel.findOneAndUpdate(
+        {
+          'event.id': currentMatch.event.id,
+          round: currentMatch.round / 2,
+          step: currentMatch.step,
+          bracketOrder: Math.floor(currentMatch.bracketOrder / 2)
+        },
+        {
+          [`${nextMatchTeam}`]: currentMatch[winTeam]
+        }
+      )
+    }
+    res.send(currentMatch.toJSON() as TournamentMatch)
+    return
+  }catch (error){
+    console.log(error)
+    res.status(500).send({ message: 'Please check if you have entered score in a correct format. For example, 21-15' })
   }
-  res.send(currentMatch.toJSON() as TournamentMatch)
-  return
 }
 export default setScore

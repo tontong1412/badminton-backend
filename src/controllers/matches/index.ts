@@ -4,6 +4,7 @@ import scheduleMatches from './schedule'
 import update from './update'
 import setScore from './setScore'
 import getMatchByID from './getByID'
+import getMyMatches from './getMyMatches'
 
 export default {
   get: getMatches,
@@ -11,5 +12,6 @@ export default {
   assignMatchNumber: assignMatchNumber,
   update,
   setScore,
-  getByID: getMatchByID
+  getByID: getMatchByID,
+  getMyMatches,
 }

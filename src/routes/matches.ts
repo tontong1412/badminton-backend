@@ -4,9 +4,9 @@ import middlewares from '../middlewares'
 
 const router = express.Router()
 
+router.get('/my-matches', middlewares.auth, matchControllers.getMyMatches)
 router.get('/:id', matchControllers.getByID)
 router.get('/', matchControllers.get)
-
 router.post('/schedule', middlewares.auth, matchControllers.schedule)
 router.post('/assign-match-number', middlewares.auth, matchControllers.assignMatchNumber)
 router.put('/:id', middlewares.auth, matchControllers.update)
