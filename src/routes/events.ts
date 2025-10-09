@@ -16,6 +16,7 @@ router.post('/withdraw', middlewares.auth, eventController.withdrawTeam)
 router.post('/random-draw', middlewares.auth, eventController.randomDraw)
 router.post('/generate-matches', middlewares.auth, eventController.generateMatches)
 router.post('/round-up', middlewares.auth, eventController.roundUp)
+router.post('/change-event', eventController.changeEvent)
 
 
 export default router

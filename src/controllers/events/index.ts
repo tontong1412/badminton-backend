@@ -10,6 +10,7 @@ import createMatches from './createMatch'
 import update from './update'
 import remove from './delete'
 import roundUp from './roundUp'
+import changeEvent from './changeEvent'
 export default {
   create,
   update,
@@ -23,4 +24,5 @@ export default {
   generateMatches: createMatches,
   remove,
   roundUp,
+  changeEvent
 }
