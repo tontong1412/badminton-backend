@@ -21,7 +21,7 @@ const addManager =  async(
     return
   }
 
-  if(user.playerID.toString() != tournament.creator.id.toString() && !tournament.managers?.map((m) => m.id)?.includes(user.playerID)){
+  if(user.playerID.toString() != tournament.creator.id.toString() && !tournament.managers.map((m) => m.id.toString()).includes(user.playerID.toString())){
     res.status(401).json({ message: 'Unauthorized: You do not have permission to add manager to this tournament' })
     return
   }
