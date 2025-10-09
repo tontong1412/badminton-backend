@@ -5,13 +5,14 @@ import update from './update'
 import setScore from './setScore'
 import getMatchByID from './getByID'
 import getMyMatches from './getMyMatches'
+import controllerErrorHandler from '../../utils/controllerErrorHandler'
 
 export default {
-  get: getMatches,
-  schedule: scheduleMatches,
-  assignMatchNumber: assignMatchNumber,
-  update,
-  setScore,
-  getByID: getMatchByID,
-  getMyMatches,
+  get: controllerErrorHandler(getMatches),
+  schedule: controllerErrorHandler(scheduleMatches),
+  assignMatchNumber: controllerErrorHandler(assignMatchNumber),
+  getByID: controllerErrorHandler(getMatchByID),
+  update: controllerErrorHandler(update),
+  setScore: controllerErrorHandler(setScore),
+  getMyMatches: controllerErrorHandler(getMyMatches),
 }

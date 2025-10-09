@@ -4,12 +4,13 @@ import forgotPassword from './forgotPassword'
 import resetPassword from './resetPassword'
 import refresh from './refresh'
 import logout from './logout'
+import controllerErrorHandler from '../../utils/controllerErrorHandler'
 
 export default {
-  create,
-  login,
-  forgotPassword,
-  resetPassword,
-  refresh,
-  logout
+  create: controllerErrorHandler(create),
+  login: controllerErrorHandler(login),
+  forgotPassword: controllerErrorHandler(forgotPassword),
+  resetPassword: controllerErrorHandler(resetPassword),
+  refresh: controllerErrorHandler(refresh),
+  logout: controllerErrorHandler(logout),
 }

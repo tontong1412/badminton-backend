@@ -11,18 +11,19 @@ import update from './update'
 import remove from './delete'
 import roundUp from './roundUp'
 import changeEvent from './changeEvent'
+import controllerErrorHandler from '../../utils/controllerErrorHandler'
 export default {
-  create,
-  update,
-  register,
-  updateTeam,
-  getById: getEventById,
-  getMyEvents,
-  withdrawTeam,
-  updateShuttlecock,
-  randomDraw: getRandomDraw,
-  generateMatches: createMatches,
-  remove,
-  roundUp,
-  changeEvent
+  create: controllerErrorHandler(create),
+  update: controllerErrorHandler(update),
+  register: controllerErrorHandler(register),
+  updateTeam: controllerErrorHandler(updateTeam),
+  getMyEvents: controllerErrorHandler(getMyEvents),
+  withdrawTeam: controllerErrorHandler(withdrawTeam),
+  updateShuttlecock: controllerErrorHandler(updateShuttlecock),
+  remove: controllerErrorHandler(remove),
+  roundUp: controllerErrorHandler(roundUp),
+  changeEvent: controllerErrorHandler(changeEvent),
+  randomDraw: controllerErrorHandler(getRandomDraw),
+  generateMatches: controllerErrorHandler(createMatches),
+  getById: controllerErrorHandler(getEventById),
 }

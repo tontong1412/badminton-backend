@@ -19,6 +19,9 @@ const errorHandler = (
     }else if (error.name === 'TokenExpiredError') {
       res.status(401).json({ error: 'token expired' })
       return
+    }else {
+      res.status(500).json({ error: 'Internal server error. Please wait a moment and try again' })
+      return
     }
   }
   next(error)
