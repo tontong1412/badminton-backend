@@ -13,7 +13,7 @@ const update =  async(
   // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
   const { id } = req.params
 
-  const matchToUpdate = await MatchModel.findById(id).select({ event:1 })
+  const matchToUpdate = await MatchModel.findById(id).select({ event:1, umpire:1 })
 
   if(!matchToUpdate){
     res.status(404).json({ message: 'Match not found' })
@@ -26,6 +26,8 @@ const update =  async(
     res.status(404).json({ message: 'Event not found' })
     return
   }
+
+  // console.log(matchToUpdate.umpire?.id.toString(), user.playerID?.toString(), matchToUpdate.umpire?.id?.toString() !== user.playerID?.toString())
 
   if(
     !event.tournament.managers?.map((m) => m.id?.toString()).includes(user.playerID?.toString())
