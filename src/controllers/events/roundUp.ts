@@ -23,7 +23,13 @@ const roundUp = async(
           bracketOrder: Math.floor(i / 2)
         },
         {
-          [`${teamOrder}`]: typeof bracketOrder[i] === 'string' ? null : bracketOrder[i]
+          [`${teamOrder}`]: typeof bracketOrder[i] === 'string' ? null : {
+            ...bracketOrder[i], serving: 0,
+            receiving: 0,
+            isServing: true,
+            scoreSet: 0,
+            score: 0,
+            scoreDiff: 0 }
         },
         { new: true }
       )
@@ -56,7 +62,14 @@ const roundUp = async(
               bracketOrder: Math.floor(currentMatch.bracketOrder / 2)
             },
             {
-              [`${nextMatchTeam}`]: typeof currentMatch[winTeam] === 'string' ? null : currentMatch[winTeam]
+              [`${nextMatchTeam}`]: typeof currentMatch[winTeam] === 'string' ? null : {
+                ...currentMatch[winTeam],
+                serving: 0,
+                receiving: 0,
+                isServing: true,
+                scoreSet: 0,
+                score: 0,
+                scoreDiff: 0 }
             }
           )
         } catch (error) {
