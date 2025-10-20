@@ -1,5 +1,5 @@
 import { Request, Response } from 'express'
-import { ErrorResponse,  EventFormat, Match, MatchStatus, NewMatch, NonSensitivePlayer, ResponseLocals, Team, TournamentMatchStep } from '../../type'
+import { ErrorResponse,  EventFormat, Match, MatchStatus, MatchTeam, NewMatch, NonSensitivePlayer, ResponseLocals, Team, TournamentMatchStep } from '../../type'
 import EventModel from '../../schema/event'
 import MatchModel from '../../schema/match'
 import { Types } from 'mongoose'
@@ -23,148 +23,185 @@ const createMatches =  async(
   await MatchModel.deleteMany({ 'event.id': eventID })
 
   const matchToCreate: NewMatch[] = []
-  let maxRoundOnFirstStage = 0
 
-  event.draw?.group?.forEach((groupObj, groupIndex) => {
-    const tempGroupObj: (Team | null)[] = [...groupObj]
 
-    if(tempGroupObj.length % 2 === 1) { // add dummy player
-      tempGroupObj.unshift(null)
-    }
-    const totalRound = tempGroupObj.length - 1
-    if(maxRoundOnFirstStage < totalRound){
-      maxRoundOnFirstStage = totalRound
-    }
-
-    const standTeam = tempGroupObj[0]
-    const roundRobinTeam = tempGroupObj.slice(1, tempGroupObj.length)
-
-    for(let round = 0;round < totalRound;round++){
-      if(standTeam){
-        matchToCreate.push({
-          event: {
-            id: event.id as Types.ObjectId,
-            name: event.name,
-            fee: event.fee,
-          },
-          step: TournamentMatchStep.Group,
-          round,
-          groupOrder: groupIndex,
-          teamA: {
-            id: roundRobinTeam[roundRobinTeam.length - 1]?.id as Types.ObjectId,
-            players: roundRobinTeam[roundRobinTeam.length - 1]?.players as NonSensitivePlayer[],
-            serving: 0,
-            receiving: 0,
-            isServing: true,
-            scoreSet: 0,
-            score: 0,
-            scoreDiff: 0
-          },
-          teamB: {
-            id: standTeam.id,
-            players: standTeam?.players,
-            serving: 0,
-            receiving: 0,
-            isServing: true,
-            scoreSet: 0,
-            score: 0,
-            scoreDiff: 0,
-          },
-          shuttlecockUsed: 0,
-          level: event.level,
-          status: MatchStatus.Waiting,
-          scoreLabel: [],
-        })
-      }
-      for (let j = 0; j < (roundRobinTeam.length - 1) / 2; j++) {
-        matchToCreate.push({
-          event: {
-            id: event.id as Types.ObjectId,
-            name: event.name,
-            fee: event.fee,
-          },
-          step: TournamentMatchStep.Group,
-          round,
-          groupOrder: groupIndex,
-          teamA: {
-            id: roundRobinTeam[roundRobinTeam.length - 2 - j]?.id as Types.ObjectId,
-            players: roundRobinTeam[roundRobinTeam.length - 2 - j]?.players as NonSensitivePlayer[],
-            serving: 0,
-            receiving: 0,
-            isServing: true,
-            scoreSet: 0,
-            score: 0,
-            scoreDiff: 0,
-          },
-          teamB: {
-            id: roundRobinTeam[j]?.id as Types.ObjectId,
-            players: roundRobinTeam[j]?.players as NonSensitivePlayer[],
-            serving: 0,
-            receiving: 0,
-            isServing: true,
-            scoreSet: 0,
-            score: 0,
-            scoreDiff: 0,
-          },
-          shuttlecockUsed: 0,
-          level: event.level,
-          status: MatchStatus.Waiting,
-          scoreLabel: [],
-        })
-      }
-
-      const lastRoundRobinTeam: Team|null = roundRobinTeam.pop() ?? null
-      roundRobinTeam.unshift(lastRoundRobinTeam)
-    }
-  })
-
-  if(!event.draw.ko || event.draw.ko?.length < 2){
-    console.error('not enough team')
-    return
-  }
-  const totalRound = Math.log2(event.draw.ko?.length)
-  const tempKOTeam:(Team | null | string)[] = [...event.draw.ko]
-
-  for (let i = 0; i < totalRound; i++) {
-    const knockOutTeam   = [...tempKOTeam]
-    tempKOTeam.length = 0
-    knockOutTeam.forEach((_team, index, self) => {
-      if (index % 2 === 1) {
-        matchToCreate.push({
-          event: {
-            id: event.id as Types.ObjectId,
-            name: event.name,
-            fee: event.fee,
-          },
-          step: TournamentMatchStep.Playoff,
-          level: event.level,
-          teamA: null,
-          teamB: null,
-          round: Math.pow(2, totalRound - i),
-          bracketOrder: (index - 1) / 2,
-          skip: self[index] === 'bye' || self[index - 1] === 'bye',
-          status: (self[index] === 'bye' || self[index - 1] === 'bye') ? MatchStatus.Finished : MatchStatus.Waiting,
-          byePosition: self[index - 1] === 'bye' ? 1 : 0,
-          shuttlecockUsed: 0,
-          scoreLabel: []
-        })
-        tempKOTeam.push(null)
-      }
-    })
-  }
-
-  if(event.format === EventFormat.GroupPlayoffConsolation){
-    if(!event.draw.consolation || event.draw.consolation?.length < 2){
-      console.error('not enough team for consolation')
+  if(event.format === EventFormat.SingleElimination){
+    if(!event.draw.elimination || event.draw.elimination?.length < 2){
+      console.error('not enough team')
       return
     }
-    const totalRound = Math.log2(event.draw.consolation?.length)
-    const tempConsolationTeam:(Team | null | string)[] = [...event.draw.consolation]
+    const totalRound = Math.ceil(Math.log2(event.draw.elimination.length))
+    const tempElimTeam:(Team | null | string)[] = [...event.draw.elimination]
 
     for (let i = 0; i < totalRound; i++) {
-      const consolationTeam   = [...tempConsolationTeam]
-      tempConsolationTeam.length = 0
-      consolationTeam.forEach((_team, index, self) => {
+      const singleElimTeam   = [...tempElimTeam]
+      tempElimTeam.length = 0
+      singleElimTeam.forEach((_team, index, self) => {
+        if (index % 2 === 1) {
+          let teamA: (MatchTeam|null) = null
+          let teamB: (MatchTeam|null) = null
+          if(self[index - 1] !== null || self[index] !== null){
+            if(typeof self[index - 1] === 'string' || self[index - 1] === null){
+              teamA = null
+            }else {
+              teamA = {
+                ...self[index - 1] as Team,
+                serving: 0,
+                receiving: 0,
+                isServing: true,
+                scoreSet: 0,
+                score: 0,
+                scoreDiff: 0,
+              } as MatchTeam
+            }
+            if(typeof self[index] === 'string' || self[index] === null){
+              teamB = null
+            }else{
+              teamB = {
+                ...self[index],
+                serving: 0,
+                receiving: 0,
+                isServing: false,
+                scoreSet: 0,
+                score: 0,
+                scoreDiff: 0,
+              } as MatchTeam
+            }
+
+          }
+          matchToCreate.push({
+            event: {
+              id: event.id as Types.ObjectId,
+              name: event.name,
+              fee: event.fee,
+            },
+            step: TournamentMatchStep.Playoff,
+            level: event.level,
+            teamA,
+            teamB,
+            round: Math.pow(2, totalRound - i),
+            bracketOrder: (index - 1) / 2,
+            skip: self[index] === 'bye' || self[index - 1] === 'bye',
+            status: (self[index] === 'bye' || self[index - 1] === 'bye') ? MatchStatus.Finished : MatchStatus.Waiting,
+            byePosition: self[index - 1] === 'bye' ? 1 : 0,
+            shuttlecockUsed: 0,
+            scoreLabel: []
+          })
+          if(self[index] === 'bye' || self[index - 1] === 'bye'){
+            tempElimTeam.push(self[index - 1] === 'bye' ? self[index] : self[index - 1])
+          }else{
+            tempElimTeam.push(null)
+          }
+        }
+      })
+    }
+  } else {
+    let maxRoundOnFirstStage = 0
+
+    event.draw?.group?.forEach((groupObj, groupIndex) => {
+      const tempGroupObj: (Team | null)[] = [...groupObj]
+
+      if(tempGroupObj.length % 2 === 1) { // add dummy player
+        tempGroupObj.unshift(null)
+      }
+      const totalRound = tempGroupObj.length - 1
+      if(maxRoundOnFirstStage < totalRound){
+        maxRoundOnFirstStage = totalRound
+      }
+
+      const standTeam = tempGroupObj[0]
+      const roundRobinTeam = tempGroupObj.slice(1, tempGroupObj.length)
+
+      for(let round = 0;round < totalRound;round++){
+        if(standTeam){
+          matchToCreate.push({
+            event: {
+              id: event.id as Types.ObjectId,
+              name: event.name,
+              fee: event.fee,
+            },
+            step: TournamentMatchStep.Group,
+            round,
+            groupOrder: groupIndex,
+            teamA: {
+              id: roundRobinTeam[roundRobinTeam.length - 1]?.id as Types.ObjectId,
+              players: roundRobinTeam[roundRobinTeam.length - 1]?.players as NonSensitivePlayer[],
+              serving: 0,
+              receiving: 0,
+              isServing: true,
+              scoreSet: 0,
+              score: 0,
+              scoreDiff: 0
+            },
+            teamB: {
+              id: standTeam.id,
+              players: standTeam?.players,
+              serving: 0,
+              receiving: 0,
+              isServing: true,
+              scoreSet: 0,
+              score: 0,
+              scoreDiff: 0,
+            },
+            shuttlecockUsed: 0,
+            level: event.level,
+            status: MatchStatus.Waiting,
+            scoreLabel: [],
+          })
+        }
+        for (let j = 0; j < (roundRobinTeam.length - 1) / 2; j++) {
+          matchToCreate.push({
+            event: {
+              id: event.id as Types.ObjectId,
+              name: event.name,
+              fee: event.fee,
+            },
+            step: TournamentMatchStep.Group,
+            round,
+            groupOrder: groupIndex,
+            teamA: {
+              id: roundRobinTeam[roundRobinTeam.length - 2 - j]?.id as Types.ObjectId,
+              players: roundRobinTeam[roundRobinTeam.length - 2 - j]?.players as NonSensitivePlayer[],
+              serving: 0,
+              receiving: 0,
+              isServing: true,
+              scoreSet: 0,
+              score: 0,
+              scoreDiff: 0,
+            },
+            teamB: {
+              id: roundRobinTeam[j]?.id as Types.ObjectId,
+              players: roundRobinTeam[j]?.players as NonSensitivePlayer[],
+              serving: 0,
+              receiving: 0,
+              isServing: true,
+              scoreSet: 0,
+              score: 0,
+              scoreDiff: 0,
+            },
+            shuttlecockUsed: 0,
+            level: event.level,
+            status: MatchStatus.Waiting,
+            scoreLabel: [],
+          })
+        }
+
+        const lastRoundRobinTeam: Team|null = roundRobinTeam.pop() ?? null
+        roundRobinTeam.unshift(lastRoundRobinTeam)
+      }
+    })
+
+    if(!event.draw.ko || event.draw.ko?.length < 2){
+      console.error('not enough team')
+      return
+    }
+    const totalRound = Math.log2(event.draw.ko?.length)
+    const tempKOTeam:(Team | null | string)[] = [...event.draw.ko]
+
+    for (let i = 0; i < totalRound; i++) {
+      const knockOutTeam   = [...tempKOTeam]
+      tempKOTeam.length = 0
+      knockOutTeam.forEach((_team, index, self) => {
         if (index % 2 === 1) {
           matchToCreate.push({
             event: {
@@ -172,7 +209,7 @@ const createMatches =  async(
               name: event.name,
               fee: event.fee,
             },
-            step: TournamentMatchStep.Consolation,
+            step: TournamentMatchStep.Playoff,
             level: event.level,
             teamA: null,
             teamB: null,
@@ -184,9 +221,46 @@ const createMatches =  async(
             shuttlecockUsed: 0,
             scoreLabel: []
           })
-          tempConsolationTeam.push(null)
+          tempKOTeam.push(null)
         }
       })
+    }
+
+    if(event.format === EventFormat.GroupPlayoffConsolation){
+      if(!event.draw.consolation || event.draw.consolation?.length < 2){
+        console.error('not enough team for consolation')
+        return
+      }
+      const totalRound = Math.log2(event.draw.consolation?.length)
+      const tempConsolationTeam:(Team | null | string)[] = [...event.draw.consolation]
+
+      for (let i = 0; i < totalRound; i++) {
+        const consolationTeam   = [...tempConsolationTeam]
+        tempConsolationTeam.length = 0
+        consolationTeam.forEach((_team, index, self) => {
+          if (index % 2 === 1) {
+            matchToCreate.push({
+              event: {
+                id: event.id as Types.ObjectId,
+                name: event.name,
+                fee: event.fee,
+              },
+              step: TournamentMatchStep.Consolation,
+              level: event.level,
+              teamA: null,
+              teamB: null,
+              round: Math.pow(2, totalRound - i),
+              bracketOrder: (index - 1) / 2,
+              skip: self[index] === 'bye' || self[index - 1] === 'bye',
+              status: (self[index] === 'bye' || self[index - 1] === 'bye') ? MatchStatus.Finished : MatchStatus.Waiting,
+              byePosition: self[index - 1] === 'bye' ? 1 : 0,
+              shuttlecockUsed: 0,
+              scoreLabel: []
+            })
+            tempConsolationTeam.push(null)
+          }
+        })
+      }
     }
   }
 
