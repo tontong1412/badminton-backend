@@ -6,6 +6,7 @@ const router = express.Router()
 
 router.get('/', playerController.getNonSensitivePlayers)
 router.post('/', playerController.createPlayer)
+router.get('/:id/history', playerController.getPlayerHistory)
 router.get('/:id', playerController.getNonSensitivePlayerById)
 router.put('/:id', middlewares.auth, playerController.updatePlayer)
 router.post('/claim', playerController.claimPlayer)
