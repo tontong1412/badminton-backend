@@ -4,11 +4,15 @@ import cookieParser from 'cookie-parser'
 import middlewares from './middlewares'
 
 import sessionRouter from './routes/sessions'
+import bookingRouter from './routes/bookings'
+import courtRouter from './routes/courts'
 import playerRouter from './routes/players'
 import matchRouter from './routes/matches'
+import resaleRouter from './routes/resale'
 import userRouter from './routes/users'
 import tournamentRouter from './routes/tournaments'
 import eventRouter from './routes/events'
+import venueRouter from './routes/venues'
 import config from './config'
 import './utils/database'
 
@@ -28,6 +32,10 @@ app.get('/ping', (_req, res) => {
 })
 
 app.use('/sessions', sessionRouter)
+app.use('/venues', venueRouter)
+app.use('/courts', courtRouter)
+app.use('/bookings', bookingRouter)
+app.use('/resale', resaleRouter)
 app.use('/players', playerRouter)
 app.use('/matches', matchRouter)
 app.use('/users', userRouter)

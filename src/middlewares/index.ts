@@ -1,5 +1,5 @@
 import { NextFunction, Request, Response } from 'express'
-import { RequestWithCookies } from '../type'
+import { RequestWithCookies, UserRole } from '../type'
 import tokenUtils from '../utils/token'
 import config from '../config'
 
@@ -46,7 +46,19 @@ const auth = (req: RequestWithCookies, res: Response, next: NextFunction) => {
   return
 }
 
+const adminAuth = (req: RequestWithCookies, res: Response, next: NextFunction) => {
+  auth(req, res, () => {
+    if (res.locals.user.role !== UserRole.Admin) {
+      res.status(403).send('Forbidden')
+      return
+    }
+
+    next()
+  })
+}
+
 export default {
   errorHandler,
-  auth
+  auth,
+  adminAuth,
 }

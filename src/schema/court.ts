@@ -1,0 +1,51 @@
+import mongoose, { Document, Schema, Types } from 'mongoose'
+import constants from '../constants'
+
+export interface CourtDocument extends Document {
+  venueID: Types.ObjectId;
+  name: string;
+  description?: string;
+  pricePerHour: number;
+  currency: string;
+  status: 'active' | 'inactive';
+}
+
+const courtSchema = new Schema<CourtDocument>({
+  venueID: {
+    type: Schema.Types.ObjectId,
+    ref: constants.DATABASE.COLLECTION.VENUE,
+    required: true,
+  },
+  name: { type: String, required: true, trim: true },
+  description: { type: String, trim: true },
+  pricePerHour: { type: Number, required: true, min: 0 },
+  currency: { type: String, required: true, trim: true, default: 'THB' },
+  status: {
+    type: String,
+    enum: ['active', 'inactive'],
+    default: 'active',
+    required: true,
+  },
+}, {
+  timestamps: { createdAt: true, updatedAt: true },
+})
+
+courtSchema.virtual('id').get(function(this: CourtDocument): string {
+  if (this._id instanceof mongoose.Types.ObjectId) {
+    return this._id.toHexString()
+  }
+
+  return String(this._id)
+})
+
+courtSchema.set('toJSON', {
+  virtuals: true,
+  transform: (_doc: Document, ret: Record<string, unknown>): void => {
+    delete ret._id
+    delete ret.__v
+  }
+})
+
+const CourtModel = mongoose.model<CourtDocument>('Court', courtSchema)
+
+export default CourtModel

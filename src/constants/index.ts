@@ -6,8 +6,12 @@ const DATABASE  = {
     USER: 'user',
     TOURNAMENT: 'tournament',
     VENUE: 'venue',
+    COURT: 'court',
     TEAM: 'team',
-    EVENT: 'event'
+    EVENT: 'event',
+    BOOKING: 'booking',
+    RECURRING_GROUP: 'recurringGroup',
+    RESALE_LISTING: 'resaleListing'
   }
 }
 

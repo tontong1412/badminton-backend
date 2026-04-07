@@ -36,7 +36,8 @@ const refresh = async(
     const userPayload = {
       id: decoded.id,
       email: decoded.email,
-      playerID: decoded.playerID
+      playerID: decoded.playerID,
+      role: decoded.role,
     }
 
     const newAccessToken = tokenUtils.create(userPayload, config.ACCESS_SECRET, constants.TOKEN.EXPIRE_TIME.ACCESS)

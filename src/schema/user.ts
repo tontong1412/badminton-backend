@@ -1,5 +1,5 @@
 import  mongoose, { Schema, Document }   from 'mongoose'
-import { NewUser } from '../type'
+import { NewUser, UserRole } from '../type'
 import CONSTANT from '../constants'
 
 export interface UserDocument extends NewUser, Document {}
@@ -8,6 +8,12 @@ const userSchema =  new Schema<UserDocument>({
   email: { type: String, required: true, trim: true, unique: true },
   hash: String,
   playerID: { type: Schema.Types.ObjectId, ref: CONSTANT.DATABASE.COLLECTION.PLAYER },
+  role: {
+    type: String,
+    enum: Object.values(UserRole),
+    default: UserRole.User,
+    required: true,
+  },
   googleID: String,
 }, {
   timestamps: { createdAt: true, updatedAt:true }

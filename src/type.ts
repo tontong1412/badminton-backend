@@ -6,6 +6,11 @@ export enum Gender {
   Female = 'female',
 }
 
+export enum UserRole {
+  User = 'user',
+  Admin = 'admin',
+}
+
 export interface Player {
   id: Types.ObjectId;
   userID?: Types.ObjectId;
@@ -41,6 +46,7 @@ export interface User {
   email: string;
   hash: string;
   playerID: Types.ObjectId;
+  role: UserRole;
   googleID?: string;
 }
 
@@ -102,6 +108,150 @@ export interface Venue {
     coordinates: [number, number];  // [longitude, latitude]
   },
 }
+
+export interface DailySchedule {
+  open: string;
+  close: string;
+}
+
+export interface HolidaySchedule {
+  date: Date;
+  isClosed: boolean;
+  openTime?: string;
+  closeTime?: string;
+}
+
+export interface GapPolicy {
+  enabled: boolean;
+  minimumGapMinutes: 30 | 60;
+}
+
+export interface BookingVenue extends Venue {
+  weeklySchedule: Record<string, DailySchedule | null>;
+  holidays: HolidaySchedule[];
+  slotDurationMinutes: number;
+  gapPolicy: GapPolicy;
+  ownerUserID: Types.ObjectId;
+}
+
+export interface Court {
+  id: Types.ObjectId;
+  venueID: Types.ObjectId;
+  name: string;
+  description?: string;
+  pricePerHour: number;
+  currency: string;
+  status: 'active' | 'inactive';
+}
+
+export type NewCourt = Omit<Court, 'id'>;
+
+export enum BookingType {
+  Single = 'single',
+  Recurring = 'recurring',
+}
+
+export enum BookingStatus {
+  Pending = 'pending',
+  Confirmed = 'confirmed',
+  Cancelled = 'cancelled',
+}
+
+export enum RecurringPattern {
+  Daily = 'daily',
+  Weekly = 'weekly',
+}
+
+export enum ResaleStatus {
+  Active = 'active',
+  Sold = 'sold',
+  Cancelled = 'cancelled',
+}
+
+export enum SellerPayoutStatus {
+  Pending = 'pending',
+  Paid = 'paid',
+}
+
+export enum ResaleOutcome {
+  None = 'none',
+  Listed = 'listed',
+  Resold = 'resold',
+}
+
+export interface GuestIdentity {
+  guestName: string;
+  guestPhone: string;
+  guestEmail: string;
+}
+
+export interface Booking {
+  id: Types.ObjectId;
+  bookingBundleID?: Types.ObjectId;
+  courtID: Types.ObjectId;
+  date: Date;
+  startTime: string;
+  endTime: string;
+  durationMinutes: number;
+  totalPrice: number;
+  currency: string;
+  bookerType: 'guest' | 'user';
+  userID?: Types.ObjectId;
+  guestName?: string;
+  guestPhone?: string;
+  guestEmail?: string;
+  bookingType: BookingType;
+  recurringGroupID?: Types.ObjectId;
+  status: BookingStatus;
+  paymentStatus: PaymentStatus;
+  slip?: string;
+  slipTimestamp?: Date;
+  resaleListingID?: Types.ObjectId;
+  resaleSourceListingID?: Types.ObjectId;
+  resaleOutcome: ResaleOutcome;
+  note?: string;
+}
+
+export type NewBooking = Omit<Booking, 'id'>;
+
+export interface RecurringGroup {
+  id: Types.ObjectId;
+  courtID: Types.ObjectId;
+  startTime: string;
+  endTime: string;
+  durationMinutes: number;
+  pattern: RecurringPattern;
+  daysOfWeek?: number[];
+  rangeStart: Date;
+  rangeEnd: Date;
+  userID: Types.ObjectId;
+  bookingIDs: Types.ObjectId[];
+}
+
+export type NewRecurringGroup = Omit<RecurringGroup, 'id'>;
+
+export interface ResaleListing {
+  id: Types.ObjectId;
+  bookingID: Types.ObjectId;
+  sellerID: Types.ObjectId;
+  venueID: Types.ObjectId;
+  venueOwnerID: Types.ObjectId;
+  askingPrice: number;
+  currency: string;
+  status: ResaleStatus;
+  buyerType?: 'guest' | 'user';
+  buyerID?: Types.ObjectId;
+  buyerName?: string;
+  buyerPhone?: string;
+  buyerEmail?: string;
+  venuePaymentSlip?: string;
+  venuePaymentSlipTimestamp?: Date;
+  sellerPayoutStatus: SellerPayoutStatus;
+  sellerPayoutAt?: Date;
+  soldAt?: Date;
+}
+
+export type NewResaleListing = Omit<ResaleListing, 'id'>;
 
 export enum TournamentStatus {
   Preparation = 'preparation',
