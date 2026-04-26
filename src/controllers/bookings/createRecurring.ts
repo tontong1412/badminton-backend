@@ -96,6 +96,7 @@ const createRecurring = async(
   }
 
   const durationMinutes = bookingUtils.calculateDurationMinutes(req.body.startTime, req.body.endTime)
+  const bookingBundleID = new Types.ObjectId()
   const recurringGroup = await new RecurringGroupModel({
     courtID: court._id,
     startTime: req.body.startTime,
@@ -109,6 +110,7 @@ const createRecurring = async(
   }).save()
 
   const bookings = await BookingModel.insertMany(dates.map((date) => ({
+    bookingBundleID,
     courtID: court._id,
     date,
     startTime: req.body.startTime,

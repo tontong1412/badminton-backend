@@ -8,6 +8,7 @@ router.get('/', middlewares.auth, bookingController.get)
 router.get('/:id', bookingController.getById)
 router.post('/', bookingController.createSingle)
 router.post('/recurring', middlewares.auth, bookingController.createRecurring)
+router.put('/bundles/:bookingBundleID/pay', bookingController.payBooking)
 router.delete('/:id', middlewares.auth, bookingController.cancel)
 
 export default router
