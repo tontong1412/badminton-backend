@@ -192,6 +192,50 @@ const calculateTotalPrice = (pricePerHour: number, durationMinutes: number): num
   return Number(((pricePerHour / 60) * durationMinutes).toFixed(2))
 }
 
+/**
+ * Calculates total price for a booking by splitting the booking window into
+ * segments and applying the matching pricing rule (or fallback pricePerHour)
+ * to each segment.
+ */
+const calculateTotalPriceWithRules = (
+  court: { pricePerHour: number; pricingRules?: Array<{ startTime: string; endTime: string; pricePerHour: number }> },
+  startTime: string,
+  endTime: string,
+): number => {
+  const rules = court.pricingRules ?? []
+  const bookingStart = timeToMinutes(startTime)
+  const bookingEnd = timeToMinutes(endTime)
+
+  if (rules.length === 0) {
+    return calculateTotalPrice(court.pricePerHour, bookingEnd - bookingStart)
+  }
+
+  // Collect all boundary points within the booking window
+  const boundaries = new Set<number>([bookingStart, bookingEnd])
+  for (const rule of rules) {
+    const rs = timeToMinutes(rule.startTime)
+    const re = timeToMinutes(rule.endTime)
+    if (rs > bookingStart && rs < bookingEnd) boundaries.add(rs)
+    if (re > bookingStart && re < bookingEnd) boundaries.add(re)
+  }
+
+  const sorted = Array.from(boundaries).sort((a, b) => a - b)
+
+  let total = 0
+  for (let i = 0; i < sorted.length - 1; i++) {
+    const segStart = sorted[i]
+    const segEnd = sorted[i + 1]
+    const duration = segEnd - segStart
+    const rule = rules.find(
+      (r) => timeToMinutes(r.startTime) <= segStart && timeToMinutes(r.endTime) >= segEnd,
+    )
+    const price = rule ? rule.pricePerHour : court.pricePerHour
+    total += (price / 60) * duration
+  }
+
+  return Number(total.toFixed(2))
+}
+
 const enumerateRecurringDates = (
   pattern: 'daily' | 'weekly',
   rangeStart: Date,
@@ -228,5 +272,6 @@ export default {
   checkSlotAvailability,
   validateBookingGap,
   calculateTotalPrice,
+  calculateTotalPriceWithRules,
   enumerateRecurringDates,
 }

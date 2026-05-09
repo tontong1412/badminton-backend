@@ -116,7 +116,7 @@ const createRecurring = async(
     startTime: req.body.startTime,
     endTime: req.body.endTime,
     durationMinutes,
-    totalPrice: bookingUtils.calculateTotalPrice(court.pricePerHour, durationMinutes),
+    totalPrice: bookingUtils.calculateTotalPriceWithRules(court, req.body.startTime, req.body.endTime),
     currency: court.currency,
     bookerType: 'user',
     userID: res.locals.user.id,

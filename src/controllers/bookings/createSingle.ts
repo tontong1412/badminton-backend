@@ -139,7 +139,7 @@ const createSingle = async(
       startTime: item.startTime,
       endTime: item.endTime,
       durationMinutes,
-      totalPrice: bookingUtils.calculateTotalPrice(court.pricePerHour, durationMinutes),
+      totalPrice: bookingUtils.calculateTotalPriceWithRules(court, item.startTime, item.endTime),
       currency: court.currency,
     })
 
