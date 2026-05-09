@@ -7,7 +7,7 @@ const getAvailability = async(req: Request<{ id: string }>, res: Response): Prom
   const date = typeof req.query.date === 'string' ? req.query.date : null
   const requestedDuration = typeof req.query.durationMinutes === 'string'
     ? Number(req.query.durationMinutes)
-    : bookingUtils.MIN_BOOKING_MINUTES
+    : bookingUtils.SLOT_DURATION_MINUTES
 
   if (!date) {
     res.status(400).json({ message: 'date query is required' })
@@ -16,10 +16,10 @@ const getAvailability = async(req: Request<{ id: string }>, res: Response): Prom
 
   if (
     Number.isNaN(requestedDuration)
-    || requestedDuration < bookingUtils.MIN_BOOKING_MINUTES
+    || requestedDuration < bookingUtils.SLOT_DURATION_MINUTES
     || requestedDuration % bookingUtils.SLOT_DURATION_MINUTES !== 0
   ) {
-    res.status(400).json({ message: 'durationMinutes must be at least 60 and divisible by 30.' })
+    res.status(400).json({ message: 'durationMinutes must be at least 30 and divisible by 30.' })
     return
   }
 

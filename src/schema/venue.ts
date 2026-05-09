@@ -2,6 +2,14 @@ import mongoose, { Document, Schema, Types } from 'mongoose'
 import { DailySchedule, GapPolicy, HolidaySchedule } from '../type'
 import constants from '../constants'
 
+export interface VenuePayment {
+  bankName: string;
+  accountNumber: string;
+  accountName: string;
+  promptPayID?: string;
+  qrCodeUrl?: string;
+}
+
 export interface VenueDocument extends Document {
   name: {
     th: string;
@@ -17,6 +25,7 @@ export interface VenueDocument extends Document {
   holidays: HolidaySchedule[];
   slotDurationMinutes: number;
   gapPolicy: GapPolicy;
+  payment?: VenuePayment;
 }
 
 const holidaySchema = new Schema<HolidaySchedule>({
@@ -71,6 +80,13 @@ const venueSchema = new Schema<VenueDocument>({
       enum: [30, 60],
       default: 60,
     },
+  },
+  payment: {
+    bankName: { type: String, trim: true },
+    accountNumber: { type: String, trim: true },
+    accountName: { type: String, trim: true },
+    promptPayID: { type: String, trim: true },
+    qrCodeUrl: { type: String, trim: true },
   },
 }, {
   timestamps: { createdAt: true, updatedAt: true },
