@@ -71,7 +71,7 @@ const venueSchema = new Schema<VenueDocument>({
   slotDurationMinutes: {
     type: Number,
     default: 30,
-    enum: [30],
+    enum: [30, 60],
   },
   gapPolicy: {
     enabled: { type: Boolean, default: true },

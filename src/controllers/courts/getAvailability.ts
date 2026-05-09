@@ -47,7 +47,7 @@ const getAvailability = async(req: Request<{ id: string }>, res: Response): Prom
     return
   }
 
-  const startSlots = bookingUtils.generateSlots(schedule.open, schedule.close, requestedDuration)
+  const startSlots = bookingUtils.generateSlots(schedule.open, schedule.close, requestedDuration, Number(court.get('slotStartOffsetMinutes') ?? 0))
   const slotResults = await Promise.all(startSlots.map(async(startTime) => {
     const endTime = bookingUtils.addMinutes(startTime, requestedDuration)
     const availability = await bookingUtils.checkSlotAvailability(court.id, new Date(date), startTime, endTime)

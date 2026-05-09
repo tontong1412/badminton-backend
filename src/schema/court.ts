@@ -13,6 +13,7 @@ export interface CourtDocument extends Document {
   description?: string;
   pricePerHour: number;  // default fallback price
   pricingRules: CourtPricingRule[];
+  slotStartOffsetMinutes: number;
   currency: string;
   status: 'active' | 'inactive';
 }
@@ -33,6 +34,7 @@ const courtSchema = new Schema<CourtDocument>({
   description: { type: String, trim: true },
   pricePerHour: { type: Number, required: true, min: 0 },
   pricingRules: { type: [pricingRuleSchema], default: [] },
+  slotStartOffsetMinutes: { type: Number, default: 0, enum: [0, 30] },
   currency: { type: String, required: true, trim: true, default: 'THB' },
   status: {
     type: String,

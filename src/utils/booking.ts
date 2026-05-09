@@ -40,12 +40,23 @@ const isThirtyMinuteBoundary = (time: string): boolean => {
   return timeToMinutes(time) % SLOT_DURATION_MINUTES === 0
 }
 
-const generateSlots = (openTime: string, closeTime: string, durationMinutes: number): string[] => {
+const generateSlots = (openTime: string, closeTime: string, durationMinutes: number, startOffsetMinutes = 0): string[] => {
   const slots: string[] = []
   const openMinutes = timeToMinutes(openTime)
   const closeMinutes = timeToMinutes(closeTime)
 
-  for (let cursor = openMinutes; cursor + durationMinutes <= closeMinutes; cursor += SLOT_DURATION_MINUTES) {
+  // Find first cursor that is >= open and aligns to the offset within each duration block
+  const offsetInBlock = startOffsetMinutes % durationMinutes
+  let cursor = openMinutes
+  if (offsetInBlock > 0) {
+    // advance to first slot whose minutes-of-block match offsetInBlock
+    const remainder = (openMinutes - offsetInBlock) % durationMinutes
+    if (remainder !== 0) cursor = openMinutes + (durationMinutes - remainder)
+    // if openMinutes itself already sits at the right offset, keep it
+    if ((openMinutes - offsetInBlock) % durationMinutes === 0) cursor = openMinutes
+  }
+
+  for (; cursor + durationMinutes <= closeMinutes; cursor += durationMinutes) {
     slots.push(minutesToTime(cursor))
   }
 
@@ -197,7 +208,7 @@ const calculateTotalPrice = (pricePerHour: number, durationMinutes: number): num
  * segments and applying the matching pricing rule (or fallback pricePerHour)
  * to each segment.
  */
-const calculateTotalPriceWithRules = (
+export const calculateTotalPriceWithRules = (
   court: { pricePerHour: number; pricingRules?: Array<{ startTime: string; endTime: string; pricePerHour: number }> },
   startTime: string,
   endTime: string,
