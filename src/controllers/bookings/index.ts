@@ -6,6 +6,7 @@ import createSingle from './createSingle'
 import get from './get'
 import getById from './getById'
 import getVenueBookings from './getVenueBookings'
+import markAsPaid from './markAsPaid'
 import payBooking from './payBooking'
 
 export default {
@@ -17,4 +18,5 @@ export default {
   cancel: controllerErrorHandler(cancel),
   payBooking: controllerErrorHandler(payBooking),
   approvePayment: controllerErrorHandler(approvePayment),
+  markAsPaid: controllerErrorHandler(markAsPaid),
 }
