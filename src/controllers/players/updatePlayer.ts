@@ -1,11 +1,10 @@
-import { NextFunction, Response } from 'express'
+import { Response } from 'express'
 import playerService from '../../services/playerService'
 import { NonSensitivePlayer, RequestWithCookies, ResponseLocals, ErrorResponse } from '../../type'
 
 const updatePlayer = async(
   req: RequestWithCookies,
   res: Response<NonSensitivePlayer | ErrorResponse, ResponseLocals>,
-  next: NextFunction,
 ): Promise<void> => {
 
   const { user } = res.locals
@@ -28,8 +27,7 @@ const updatePlayer = async(
 
   } catch(error: unknown){
     console.error('Error claiming player:', error)
-    next(error)
-    return
+    throw error
   }
 }
 export default updatePlayer

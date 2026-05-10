@@ -1,4 +1,4 @@
-import { NextFunction, Response } from 'express'
+import { Response } from 'express'
 import playerService from '../../services/playerService'
 import tokenUtils from '../../utils/token'
 import config from '../../config'
@@ -12,7 +12,6 @@ interface ClaimPlayer {
 const claimPlayer = async(
   req: RequestWithCookies,
   res: Response,
-  next: NextFunction,
 ): Promise<void> => {
   const token = req.cookies.access
   if (!token) {
@@ -53,8 +52,7 @@ const claimPlayer = async(
 
   } catch(error: unknown){
     console.error('Error claiming player:', error)
-    next(error)
-    return
+    throw error
   }
 }
 export default claimPlayer

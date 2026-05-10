@@ -1,4 +1,4 @@
-import { NextFunction, Response } from 'express'
+import { Response } from 'express'
 import { ErrorResponse, LoginResponse, Player, RequestWithCookies } from '../../type'
 import tokenUtils from '../../utils/token'
 import config from '../../config'
@@ -7,8 +7,7 @@ import PlayerModel from '../../schema/player'
 
 const refresh = async(
   req: RequestWithCookies,
-  res: Response<LoginResponse | ErrorResponse>,
-  next: NextFunction): Promise<void> => {
+  res: Response<LoginResponse | ErrorResponse>): Promise<void> => {
   const refreshToken = req.cookies.refresh
   if (!refreshToken) {
     res.sendStatus(401)
@@ -68,7 +67,7 @@ const refresh = async(
     })
   } catch (error) {
     console.log(error)
-    next(error)
+    throw error
   }
 }
 export default refresh

@@ -1,4 +1,4 @@
-import { NextFunction, Request, Response } from 'express'
+import { Request, Response } from 'express'
 import { ErrorResponse, NonSensitivePlayer, TournamentMatch  } from '../../type'
 import MatchModel from '../../schema/match'
 import PlayerModel from '../../schema/player'
@@ -25,8 +25,7 @@ interface PlayerHistoryResponse {
 
 const getHistory = async(
   req: Request<{ id: string }>,
-  res: Response<PlayerHistoryResponse | ErrorResponse>,
-  next: NextFunction) => {
+  res: Response<PlayerHistoryResponse | ErrorResponse>) => {
   console.log('Received request to get player history with id:', req.params.id)
   try{
     const { id } = req.params
@@ -130,8 +129,7 @@ const getHistory = async(
     return
   }catch(error: unknown){
     console.error('Error getting player history:', error)
-    next(error)
-    return
+    throw error
   }
 
 }

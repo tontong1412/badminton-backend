@@ -1,6 +1,6 @@
 import argon2 from 'argon2'
 import { Request, Response } from 'express'
-import { Login, LoginResponse, Player, TokenPayload } from '../../type'
+import { ErrorResponse, Login, LoginResponse, Player, TokenPayload } from '../../type'
 import UserModel from '../../schema/user'
 import PlayerModel from '../../schema/player'
 import { Types } from 'mongoose'
@@ -22,8 +22,14 @@ interface CreateUserPayload extends Login {
 
 const createUser = async(
   req: Request<unknown, unknown, CreateUserPayload, unknown>,
-  res: Response<LoginResponse>) => {
+  res: Response<LoginResponse | ErrorResponse>) => {
   const { email, password } = req.body
+
+  const existingUser = await UserModel.findOne({ email })
+  if (existingUser) {
+    res.status(400).json({ message: 'This email is already in use.' })
+    return
+  }
 
   const hash = await argon2.hash(password)
   const user = new UserModel({
