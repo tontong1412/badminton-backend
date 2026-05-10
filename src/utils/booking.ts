@@ -87,13 +87,13 @@ const getVenueScheduleForDate = (
   return venue.weeklySchedule?.[dayKey] ?? null
 }
 
-const validateBookingWindow = (startTime: string, endTime: string): void => {
+const validateBookingWindow = (startTime: string, endTime: string, options?: { skipMinDuration?: boolean }): void => {
   if (!isThirtyMinuteBoundary(startTime) || !isThirtyMinuteBoundary(endTime)) {
     throw new Error('Booking time must align to 30-minute increments.')
   }
 
   const durationMinutes = calculateDurationMinutes(startTime, endTime)
-  if (durationMinutes < MIN_BOOKING_MINUTES) {
+  if (!options?.skipMinDuration && durationMinutes < MIN_BOOKING_MINUTES) {
     throw new Error('Minimum booking duration is 60 minutes.')
   }
 

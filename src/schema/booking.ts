@@ -41,7 +41,7 @@ const bookingSchema = new Schema<BookingDocument>({
   date: { type: Date, required: true },
   startTime: { type: String, required: true, trim: true },
   endTime: { type: String, required: true, trim: true },
-  durationMinutes: { type: Number, required: true, min: 60 },
+  durationMinutes: { type: Number, required: true, min: 30 },
   totalPrice: { type: Number, required: true, min: 0 },
   currency: { type: String, required: true, trim: true },
   bookerType: {

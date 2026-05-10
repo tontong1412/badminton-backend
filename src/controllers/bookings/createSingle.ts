@@ -72,7 +72,8 @@ const createSingle = async(
 
   for (const item of bookingItems) {
     const bookingDate = bookingUtils.normalizeDate(item.date)
-    bookingUtils.validateBookingWindow(item.startTime, item.endTime)
+    // Validate alignment only first; min-duration check happens after venue admin status is known
+    bookingUtils.validateBookingWindow(item.startTime, item.endTime, { skipMinDuration: true })
 
     const court = await CourtModel.findById(item.courtID)
     if (!court || court.status !== 'active') {
@@ -84,6 +85,16 @@ const createSingle = async(
     if (!venue) {
       res.status(404).json({ message: 'Venue not found' })
       return
+    }
+
+    const userID = currentUser?.id?.toString()
+    const isVenueAdmin = userID && (
+      venue.ownerUserID.toString() === userID
+      || venue.managerUserIDs.some((id) => id.toString() === userID)
+    )
+    if (!isVenueAdmin) {
+      // Enforce minimum booking duration for regular users
+      bookingUtils.validateBookingWindow(item.startTime, item.endTime)
     }
 
     const schedule = bookingUtils.getVenueScheduleForDate(venue.toJSON() as never, bookingDate)
@@ -118,18 +129,20 @@ const createSingle = async(
       return
     }
 
-    const gapValidation = await bookingUtils.validateBookingGap(
-      court.id,
-      bookingDate,
-      item.startTime,
-      item.endTime,
-      venue.gapPolicy,
-      schedule.open,
-      schedule.close,
-    )
-    if (!gapValidation.valid) {
-      res.status(409).json({ message: gapValidation.reason })
-      return
+    if (!isVenueAdmin) {
+      const gapValidation = await bookingUtils.validateBookingGap(
+        court.id,
+        bookingDate,
+        item.startTime,
+        item.endTime,
+        venue.gapPolicy,
+        schedule.open,
+        schedule.close,
+      )
+      if (!gapValidation.valid) {
+        res.status(409).json({ message: gapValidation.reason })
+        return
+      }
     }
 
     const durationMinutes = bookingUtils.calculateDurationMinutes(item.startTime, item.endTime)
