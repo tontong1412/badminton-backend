@@ -25,6 +25,7 @@ interface CreateSingleBookingPayload {
   guestEmail?: string;
   slip?: string;
   note?: string;
+  bookedAsAdmin?: boolean;
 }
 
 const createSingle = async(
@@ -171,7 +172,7 @@ const createSingle = async(
     totalPrice: item.totalPrice,
     currency: item.currency,
     bookerType: currentUser ? 'user' : 'guest',
-    userID: currentUser?.id,
+    userID: req.body.bookedAsAdmin ? undefined : currentUser?.id,
     guestName: req.body.guestName || undefined,
     guestPhone: req.body.guestPhone || undefined,
     guestEmail: req.body.guestEmail || undefined,
