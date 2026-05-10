@@ -21,6 +21,7 @@ export interface VenueDocument extends Document {
     coordinates: [number, number];
   };
   ownerUserID: Types.ObjectId;
+  managerUserIDs: Types.ObjectId[];
   weeklySchedule: Record<string, DailySchedule | null>;
   holidays: HolidaySchedule[];
   slotDurationMinutes: number;
@@ -59,6 +60,11 @@ const venueSchema = new Schema<VenueDocument>({
     type: Schema.Types.ObjectId,
     ref: constants.DATABASE.COLLECTION.USER,
     required: true,
+  },
+  managerUserIDs: {
+    type: [Schema.Types.ObjectId],
+    ref: constants.DATABASE.COLLECTION.USER,
+    default: [],
   },
   weeklySchedule: {
     type: Schema.Types.Mixed,

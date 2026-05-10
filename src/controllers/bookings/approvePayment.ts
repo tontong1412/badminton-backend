@@ -37,8 +37,10 @@ const approvePayment = async(
     return
   }
 
-  if (venue.ownerUserID.toString() !== currentUser.id.toString()) {
-    res.status(403).json({ message: 'Only the venue owner can approve payments' })
+  const isOwner = venue.ownerUserID.toString() === currentUser.id.toString()
+  const isManager = venue.managerUserIDs.some((id) => id.toString() === currentUser.id.toString())
+  if (!isOwner && !isManager) {
+    res.status(403).json({ message: 'Only the venue owner or manager can approve payments' })
     return
   }
 
