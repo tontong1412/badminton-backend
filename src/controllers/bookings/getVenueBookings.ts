@@ -2,6 +2,7 @@ import { Request, Response } from 'express'
 import BookingModel from '../../schema/booking'
 import CourtModel from '../../schema/court'
 import VenueModel from '../../schema/venue'
+import PlayerModel from '../../schema/player'
 import requestUserUtils from '../../utils/requestUser'
 import { RequestWithCookies } from '../../type'
 
@@ -49,7 +50,29 @@ const getVenueBookings = async(
 
   const bookings = await BookingModel.find(query).sort({ date: 1, startTime: 1 })
 
-  res.json(bookings)
+  // Enrich user bookings with player profile (name + phone)
+  const userIDs = [...new Set(
+    bookings.filter((b) => b.bookerType === 'user' && b.userID).map((b) => b.userID!.toString()),
+  )]
+  const players = userIDs.length > 0
+    ? await PlayerModel.find({ userID: { $in: userIDs } })
+    : []
+  const playerByUserID = new Map(players.map((p) => [p.userID!.toString(), p]))
+
+  const enriched = bookings.map((b) => {
+    const json = b.toJSON() as unknown as Record<string, unknown>
+    if (b.bookerType === 'user' && b.userID) {
+      const player = playerByUserID.get(b.userID.toString())
+      if (player) {
+        json.bookerName = player.displayName?.en || player.displayName?.th
+          || player.officialName?.en || player.officialName?.th || undefined
+        json.bookerPhone = player.contact?.tel || undefined
+      }
+    }
+    return json
+  })
+
+  res.json(enriched)
 }
 
 export default getVenueBookings
