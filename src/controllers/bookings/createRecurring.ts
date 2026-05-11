@@ -122,7 +122,7 @@ const createRecurring = async(
     userID: res.locals.user.id,
     bookingType: BookingType.Recurring,
     recurringGroupID: recurringGroup._id,
-    status: BookingStatus.Confirmed,
+    status: BookingStatus.Pending,
     paymentStatus: req.body.slip ? PaymentStatus.Pending : PaymentStatus.Unpaid,
     slip: req.body.slip,
     slipTimestamp: req.body.slip ? new Date() : undefined,

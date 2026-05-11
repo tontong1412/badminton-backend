@@ -1,5 +1,4 @@
 import BookingModel from '../schema/booking'
-import { BookingStatus, PaymentStatus } from '../type'
 
 const EXPIRY_MINUTES = 10
 const POLL_INTERVAL_MS = 60_000 // run every minute
@@ -10,11 +9,11 @@ async function cancelExpiredBookings(): Promise<void> {
   try {
     const result = await BookingModel.updateMany(
       {
-        status: BookingStatus.Confirmed,
-        paymentStatus: PaymentStatus.Unpaid,
+        status: 'pending',
+        paymentStatus: 'unpaid',
         createdAt: { $lte: cutoff },
       },
-      { $set: { status: BookingStatus.Cancelled } },
+      { $set: { status: 'cancelled' } },
     )
 
     if (result.modifiedCount > 0) {
@@ -27,6 +26,6 @@ async function cancelExpiredBookings(): Promise<void> {
 
 export function startBookingExpiryJob(): void {
   // Run once immediately on startup, then every minute
-  cancelExpiredBookings()
-  setInterval(cancelExpiredBookings, POLL_INTERVAL_MS)
+  void cancelExpiredBookings()
+  setInterval(() => { void cancelExpiredBookings() }, POLL_INTERVAL_MS)
 }

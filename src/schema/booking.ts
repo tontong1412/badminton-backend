@@ -69,7 +69,7 @@ const bookingSchema = new Schema<BookingDocument>({
     type: String,
     enum: Object.values(BookingStatus),
     required: true,
-    default: BookingStatus.Confirmed,
+    default: BookingStatus.Pending,
   },
   paymentStatus: {
     type: String,

@@ -54,7 +54,7 @@ const markAsPaid = async(
 
   const updated = await BookingModel.findByIdAndUpdate(
     id,
-    { paymentStatus: PaymentStatus.Paid },
+    { paymentStatus: PaymentStatus.Paid, status: BookingStatus.Confirmed },
     { new: true },
   )
   res.json({ message: 'Booking marked as paid', booking: updated })

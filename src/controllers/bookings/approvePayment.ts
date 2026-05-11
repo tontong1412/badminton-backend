@@ -3,7 +3,7 @@ import BookingModel from '../../schema/booking'
 import CourtModel from '../../schema/court'
 import VenueModel from '../../schema/venue'
 import requestUserUtils from '../../utils/requestUser'
-import { PaymentStatus, RequestWithCookies } from '../../type'
+import { BookingStatus, PaymentStatus, RequestWithCookies } from '../../type'
 
 const approvePayment = async(
   req: RequestWithCookies & Request<{ bookingBundleID: string }>,
@@ -51,7 +51,7 @@ const approvePayment = async(
 
   await BookingModel.updateMany(
     { bookingBundleID },
-    { paymentStatus: PaymentStatus.Paid },
+    { paymentStatus: PaymentStatus.Paid, status: BookingStatus.Confirmed },
   )
 
   const updatedBookings = await BookingModel.find({ bookingBundleID })
