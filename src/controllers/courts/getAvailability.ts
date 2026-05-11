@@ -47,7 +47,11 @@ const getAvailability = async(req: Request<{ id: string }>, res: Response): Prom
     return
   }
 
-  const startSlots = bookingUtils.generateSlots(schedule.open, schedule.close, requestedDuration, Number(court.get('slotStartOffsetMinutes') ?? 0))
+  // Step every slotDurationMinutes (venue setting) so all overlapping windows are shown.
+  // Adjust the effective close so only starts where startTime + requestedDuration <= closeTime are included.
+  const stepMinutes = venue.slotDurationMinutes ?? bookingUtils.SLOT_DURATION_MINUTES
+  const effectiveClose = bookingUtils.addMinutes(schedule.close, -(requestedDuration - stepMinutes))
+  const startSlots = bookingUtils.generateSlots(schedule.open, effectiveClose, stepMinutes, Number(court.get('slotStartOffsetMinutes') ?? 0))
   const slotResults = await Promise.all(startSlots.map(async(startTime) => {
     const endTime = bookingUtils.addMinutes(startTime, requestedDuration)
     const availability = await bookingUtils.checkSlotAvailability(court.id, new Date(date), startTime, endTime)
