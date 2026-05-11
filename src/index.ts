@@ -15,6 +15,7 @@ import eventRouter from './routes/events'
 import venueRouter from './routes/venues'
 import config from './config'
 import './utils/database'
+import { startBookingExpiryJob } from './utils/bookingExpiry'
 
 const app = express()
 
@@ -48,4 +49,5 @@ app.use(middlewares.errorHandler)
 
 app.listen(config.NODE_PORT, () => {
   console.log(`Server running on port ${config.NODE_PORT}`)
+  startBookingExpiryJob()
 })
