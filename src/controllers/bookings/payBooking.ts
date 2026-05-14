@@ -1,9 +1,12 @@
 import { Request, Response } from 'express'
 import BookingModel from '../../schema/booking'
+import CourtModel from '../../schema/court'
+import VenueModel from '../../schema/venue'
 import requestUserUtils from '../../utils/requestUser'
 import { PaymentStatus, RequestWithCookies, UserRole } from '../../type'
 import mediaUtils from '../../utils/media'
 import slipokUtils from '../../utils/slipok'
+import encryptionUtils from '../../utils/encryption'
 import config from '../../config'
 
 interface PayBookingPayload {
@@ -52,9 +55,15 @@ const payBooking = async(
     }
   }
 
-  // Verify slip via SlipOK if API key is configured
-  if (config.SLIPOK.API_KEY) {
+  // Verify slip via SlipOK if the venue has configured an API key
+  const court = await CourtModel.findById(booking.courtID)
+  const venue = court ? await VenueModel.findById(court.venueID) : null
+  const slipokConfig = venue?.slipok as { branchId?: string; apiKey?: string } | undefined
+
+  if (slipokConfig?.apiKey && slipokConfig?.branchId) {
     try {
+      const apiKey = encryptionUtils.decrypt(slipokConfig.apiKey, config.ENCRYPTION_KEY)
+      const apiUrl = `https://api.slipok.com/api/line/apikey/${slipokConfig.branchId}`
       const totalAmount = bookings.reduce((sum, b) => sum + b.totalPrice, 0)
       const matches = slip.match(/^data:(image\/[\w+]+);base64,(.+)$/)
       if (!matches) {
@@ -63,7 +72,7 @@ const payBooking = async(
       }
       const mimeType = matches[1]
       const imageBuffer = Buffer.from(matches[2], 'base64')
-      const slipResult = await slipokUtils.verifySlip(imageBuffer, mimeType, totalAmount, { url: config.SLIPOK.API, apiKey: config.SLIPOK.API_KEY })
+      const slipResult = await slipokUtils.verifySlip(imageBuffer, mimeType, totalAmount, { url: apiUrl, apiKey })
       if (!slipResult.success) {
         res.status(422).json({
           message: slipResult.errorMessage,

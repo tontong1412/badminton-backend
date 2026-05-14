@@ -10,6 +10,11 @@ export interface VenuePayment {
   qrCodeUrl?: string;
 }
 
+export interface VenueSlipOK {
+  branchId: string;
+  apiKey: string; // stored encrypted
+}
+
 export interface VenueDocument extends Document {
   name: {
     th: string;
@@ -27,6 +32,7 @@ export interface VenueDocument extends Document {
   slotDurationMinutes: number;
   gapPolicy: GapPolicy;
   payment?: VenuePayment;
+  slipok?: VenueSlipOK;
   coverImage?: string;
   logo?: string;
 }
@@ -95,6 +101,10 @@ const venueSchema = new Schema<VenueDocument>({
     accountName: { type: String, trim: true },
     promptPayID: { type: String, trim: true },
     qrCodeUrl: { type: String, trim: true },
+  },
+  slipok: {
+    branchId: { type: String, trim: true },
+    apiKey: { type: String, trim: true }, // stored encrypted
   },
   coverImage: { type: String, trim: true },
   logo: { type: String, trim: true },

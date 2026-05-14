@@ -9,7 +9,15 @@ const getById = async(req: Request<{ id: string }>, res: Response): Promise<void
     return
   }
 
-  res.json(venue)
+  const venueObj = venue.toJSON() as Record<string, unknown>
+
+  // Never expose the encrypted API key to clients
+  if (venueObj.slipok) {
+    const slipok = venueObj.slipok as Record<string, unknown>
+    venueObj.slipok = { branchId: slipok.branchId, hasApiKey: !!slipok.apiKey }
+  }
+
+  res.json(venueObj)
 }
 
 export default getById

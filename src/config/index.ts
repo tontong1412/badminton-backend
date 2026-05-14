@@ -15,10 +15,8 @@ const NODE_ENV = process.env.NODE_ENV || 'development'
 const CLOUDINARY_URL = process.env.CLOUDINARY_URL || null
 const CLOUDINARY_PREFIX = process.env.CLOUDINARY_PREFIX || 'local-new'
 
-const SLIPOK = {
-  API_KEY: process.env.SLIPOK_API_KEY || null,
-  API: 'https://api.slipok.com/api/line/apikey/66407',
-}
+const ENCRYPTION_KEY = process.env.ENCRYPTION_KEY || 'change-this-in-production-32chars'
+
 const EMAIL = {
   USER: process.env.EMAIL,
   PASSWORD: process.env.EMAIL_PASSWORD
@@ -38,5 +36,5 @@ export default {
   CLIENT,
   CLOUDINARY_PREFIX,
   CLOUDINARY_URL,
-  SLIPOK,
+  ENCRYPTION_KEY,
 }
