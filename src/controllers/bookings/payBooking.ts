@@ -3,6 +3,7 @@ import BookingModel from '../../schema/booking'
 import requestUserUtils from '../../utils/requestUser'
 import { PaymentStatus, RequestWithCookies, UserRole } from '../../type'
 import mediaUtils from '../../utils/media'
+import slipokUtils from '../../utils/slipok'
 import config from '../../config'
 
 interface PayBookingPayload {
@@ -15,13 +16,14 @@ const payBooking = async(
   res: Response,
 ): Promise<void> => {
   const bookingBundleID = req.params.bookingBundleID
+  const { slip, note } = req.body as PayBookingPayload
 
-  if (!req.body.slip) {
+  if (!slip) {
     res.status(400).json({ message: 'Payment slip is required.' })
     return
   }
 
-  if (!req.body.slip.startsWith('data:image/')) {
+  if (!slip.startsWith('data:image/')) {
     res.status(400).json({ message: 'Payment slip must be a base64 image (data:image/*;base64,...)' })
     return
   }
@@ -50,8 +52,33 @@ const payBooking = async(
     }
   }
 
+  // Verify slip via SlipOK if API key is configured
+  if (config.SLIPOK.API_KEY) {
+    try {
+      const totalAmount = bookings.reduce((sum, b) => sum + b.totalPrice, 0)
+      const matches = slip.match(/^data:(image\/[\w+]+);base64,(.+)$/)
+      if (!matches) {
+        res.status(400).json({ message: 'Invalid image format.' })
+        return
+      }
+      const mimeType = matches[1]
+      const imageBuffer = Buffer.from(matches[2], 'base64')
+      const slipResult = await slipokUtils.verifySlip(imageBuffer, mimeType, totalAmount, { url: config.SLIPOK.API, apiKey: config.SLIPOK.API_KEY })
+      if (!slipResult.success) {
+        res.status(422).json({
+          message: slipResult.errorMessage,
+        })
+        return
+      }
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Slip verification failed'
+      res.status(400).json({ message })
+      return
+    }
+  }
+
   const uploadedSlip = await mediaUtils.uploadPhoto(
-    req.body.slip,
+    slip,
     `${config.CLOUDINARY_PREFIX}booking/slips`,
     `${bookingBundleID}-${Date.now()}`,
   )
@@ -62,8 +89,8 @@ const payBooking = async(
     paymentStatus: PaymentStatus.Pending,
   }
 
-  if (req.body.note) {
-    updateQuery.note = req.body.note
+  if (note) {
+    updateQuery.note = note
   }
 
   await BookingModel.updateMany(
