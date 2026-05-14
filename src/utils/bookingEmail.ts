@@ -8,6 +8,7 @@ interface BookingLike {
   endTime: string;
   totalPrice: number;
   currency: string;
+  courtName?: string;
 }
 
 interface BookingEmailOptions {
@@ -63,10 +64,13 @@ const sendBookingConfirmationEmail = async(opts: BookingEmailOptions): Promise<v
     a.startTime.localeCompare(b.startTime)
   )
 
+  const hasCourtNames = sortedBookings.some((b) => b.courtName)
+
   const bookingRows = sortedBookings.map((b) => `
     <tr>
       <td style="padding:6px 12px;border-bottom:1px solid #f0e8e0;">${moment(b.date).format('DD MMM YYYY')}</td>
       <td style="padding:6px 12px;border-bottom:1px solid #f0e8e0;">${b.startTime} – ${b.endTime}</td>
+      ${hasCourtNames ? `<td style="padding:6px 12px;border-bottom:1px solid #f0e8e0;">${b.courtName ?? ''}</td>` : ''}
     </tr>
   `).join('')
 
@@ -96,6 +100,7 @@ const sendBookingConfirmationEmail = async(opts: BookingEmailOptions): Promise<v
             <tr style="background:#f9f6f3;">
               <th style="text-align:left;padding:8px 12px;font-size:12px;color:#9c795f;text-transform:uppercase;letter-spacing:1px;">Date</th>
               <th style="text-align:left;padding:8px 12px;font-size:12px;color:#9c795f;text-transform:uppercase;letter-spacing:1px;">Time</th>
+              ${hasCourtNames ? '<th style="text-align:left;padding:8px 12px;font-size:12px;color:#9c795f;text-transform:uppercase;letter-spacing:1px;">Court</th>' : ''}
             </tr>
             ${bookingRows}
           </table>
@@ -139,7 +144,7 @@ const sendBookingConfirmationEmail = async(opts: BookingEmailOptions): Promise<v
     '',
     `Your booking at ${venueName} is confirmed.`,
     '',
-    ...sortedBookings.map((b) => `${moment(b.date).format('DD MMM YYYY')}  ${b.startTime}–${b.endTime}`),
+    ...sortedBookings.map((b) => `${moment(b.date).format('DD MMM YYYY')}  ${b.startTime}–${b.endTime}${b.courtName ? `  (${b.courtName})` : ''}`),
     '',
     `Booking Ref: #${bookingRef}`,
     `Total: ${totalPrice.toFixed(2)} ${currency}`,

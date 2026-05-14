@@ -69,6 +69,7 @@ const createSingle = async(
   }
 
   const inRequestByCourtDate = new Map<string, { startTime: string; endTime: string }[]>()
+  const courtNameMap = new Map<string, string>()
   const draftBookings: Array<{
     courtID: Types.ObjectId;
     date: Date;
@@ -90,6 +91,7 @@ const createSingle = async(
       res.status(404).json({ message: `Court not found for item ${item.courtID}` })
       return
     }
+    courtNameMap.set(court.id, court.name)
 
     const venue = await VenueModel.findById(court.venueID)
     if (!venue) {
@@ -213,7 +215,10 @@ const createSingle = async(
   // Send confirmation email (fire-and-forget — do not block response)
   const totalPrice = savedBookings.reduce((sum, booking) => sum + booking.totalPrice, 0)
   sendBookingConfirmationEmail({
-    bookings: savedBookings,
+    bookings: savedBookings.map((b) => ({
+      ...b.toObject(),
+      courtName: courtNameMap.get(b.courtID.toString()),
+    })),
     bookingBundleID: bookingBundleID.toString(),
     bookingRef,
     guestEmail: req.body.guestEmail || undefined,

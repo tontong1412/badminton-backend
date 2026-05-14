@@ -73,8 +73,15 @@ const approvePayment = async(
     const totalPrice = updatedBookings.reduce((sum, b) => sum + b.totalPrice, 0)
     const currency = firstBooking.currency ?? ''
 
+    const uniqueCourtIDs = [...new Set(updatedBookings.map((b) => b.courtID.toString()))]
+    const courts = await CourtModel.find({ _id: { $in: uniqueCourtIDs } }).lean()
+    const courtNameMap = new Map(courts.map((c) => [c._id.toString(), c.name]))
+
     sendBookingConfirmationEmail({
-      bookings: updatedBookings,
+      bookings: updatedBookings.map((b) => ({
+        ...b.toObject(),
+        courtName: courtNameMap.get(b.courtID.toString()),
+      })),
       bookingBundleID,
       bookingRef,
       guestEmail,

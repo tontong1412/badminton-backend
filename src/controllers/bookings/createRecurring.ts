@@ -149,7 +149,7 @@ const createRecurring = async(
   const venueName = venue.name?.en || venue.name?.th || ''
   const totalPrice = bookings.reduce((sum, b) => sum + b.totalPrice, 0)
   sendBookingConfirmationEmail({
-    bookings,
+    bookings: bookings.map((b) => ({ ...b.toObject(), courtName: court.name })),
     bookingBundleID: bookingBundleID.toString(),
     bookingRef,
     userEmail: res.locals.user.email,
