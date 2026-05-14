@@ -21,7 +21,8 @@ const forgotPassword = async(
   const userPayload: TokenPayload = {
     id: user._id as Types.ObjectId,
     email: user.email,
-    playerID: user.playerID
+    playerID: user.playerID,
+    role: user.role,
   }
 
   const token = tokenUtils.create(userPayload, config.ACCESS_SECRET, constants.TOKEN.EXPIRE_TIME.ACCESS)

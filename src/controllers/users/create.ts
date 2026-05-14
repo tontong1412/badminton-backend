@@ -53,6 +53,7 @@ const createUser = async(
     id: savedUser._id as Types.ObjectId,
     email: savedUser.email,
     playerID: savedPlayer._id as Types.ObjectId,
+    role: savedUser.role,
   }
 
   const accessToken = tokenUtils.create(userPayload, config.ACCESS_SECRET, constants.TOKEN.EXPIRE_TIME.ACCESS)
