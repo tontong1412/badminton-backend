@@ -7,6 +7,13 @@ import VenueModel from '../../schema/venue'
 import bookingUtils from '../../utils/booking'
 import { BookingStatus, BookingType, PaymentStatus, RecurringPattern, ResaleOutcome, ResponseLocals } from '../../type'
 
+function generateBookingRef(): string {
+  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'
+  let ref = ''
+  for (let i = 0; i < 6; i++) ref += chars[Math.floor(Math.random() * chars.length)]
+  return ref
+}
+
 interface CreateRecurringBookingPayload {
   courtID: string;
   startTime: string;
@@ -97,6 +104,7 @@ const createRecurring = async(
 
   const durationMinutes = bookingUtils.calculateDurationMinutes(req.body.startTime, req.body.endTime)
   const bookingBundleID = new Types.ObjectId()
+  const bookingRef = generateBookingRef()
   const recurringGroup = await new RecurringGroupModel({
     courtID: court._id,
     startTime: req.body.startTime,
@@ -111,6 +119,7 @@ const createRecurring = async(
 
   const bookings = await BookingModel.insertMany(dates.map((date) => ({
     bookingBundleID,
+    bookingRef,
     courtID: court._id,
     date,
     startTime: req.body.startTime,

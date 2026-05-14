@@ -4,6 +4,7 @@ import { BookingStatus, BookingType, PaymentStatus, ResaleOutcome } from '../typ
 
 export interface BookingDocument extends Document {
   bookingBundleID?: Types.ObjectId;
+  bookingRef?: string;
   courtID: Types.ObjectId;
   date: Date;
   startTime: string;
@@ -31,6 +32,10 @@ export interface BookingDocument extends Document {
 const bookingSchema = new Schema<BookingDocument>({
   bookingBundleID: {
     type: Schema.Types.ObjectId,
+    index: true,
+  },
+  bookingRef: {
+    type: String,
     index: true,
   },
   courtID: {

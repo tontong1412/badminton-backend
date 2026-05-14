@@ -7,6 +7,13 @@ import bookingUtils from '../../utils/booking'
 import requestUserUtils from '../../utils/requestUser'
 import { BookingStatus, BookingType, PaymentStatus, RequestWithCookies, ResaleOutcome } from '../../type'
 
+function generateBookingRef(): string {
+  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'
+  let ref = ''
+  for (let i = 0; i < 6; i++) ref += chars[Math.floor(Math.random() * chars.length)]
+  return ref
+}
+
 interface CreateSingleBookingItem {
   courtID: string;
   date: string;
@@ -161,9 +168,11 @@ const createSingle = async(
   }
 
   const bookingBundleID = new Types.ObjectId()
+  const bookingRef = generateBookingRef()
 
   const savedBookings = await BookingModel.insertMany(draftBookings.map((item) => ({
     bookingBundleID,
+    bookingRef,
     courtID: item.courtID,
     date: item.date,
     startTime: item.startTime,
@@ -193,6 +202,7 @@ const createSingle = async(
   const totalPrice = savedBookings.reduce((sum, booking) => sum + booking.totalPrice, 0)
   res.status(201).json({
     bookingBundleID,
+    bookingRef,
     bookingCount: savedBookings.length,
     totalPrice,
     bookings: savedBookings,
