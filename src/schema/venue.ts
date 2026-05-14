@@ -13,6 +13,7 @@ export interface VenuePayment {
 export interface VenueSlipOK {
   branchId: string;
   apiKey: string; // stored encrypted
+  enabled: boolean; // only system admins can toggle this
 }
 
 export interface VenueDocument extends Document {
@@ -105,6 +106,7 @@ const venueSchema = new Schema<VenueDocument>({
   slipok: {
     branchId: { type: String, trim: true },
     apiKey: { type: String, trim: true }, // stored encrypted
+    enabled: { type: Boolean, default: false }, // only system admins can toggle
   },
   coverImage: { type: String, trim: true },
   logo: { type: String, trim: true },

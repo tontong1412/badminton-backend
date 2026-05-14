@@ -14,7 +14,7 @@ const getById = async(req: Request<{ id: string }>, res: Response): Promise<void
   // Never expose the encrypted API key to clients
   if (venueObj.slipok) {
     const slipok = venueObj.slipok as Record<string, unknown>
-    venueObj.slipok = { branchId: slipok.branchId, hasApiKey: !!slipok.apiKey }
+    venueObj.slipok = { branchId: slipok.branchId, hasApiKey: !!slipok.apiKey, enabled: slipok.enabled ?? false }
   }
 
   res.json(venueObj)

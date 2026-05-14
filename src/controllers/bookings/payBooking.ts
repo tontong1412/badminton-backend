@@ -3,7 +3,7 @@ import BookingModel from '../../schema/booking'
 import CourtModel from '../../schema/court'
 import VenueModel from '../../schema/venue'
 import requestUserUtils from '../../utils/requestUser'
-import { PaymentStatus, RequestWithCookies, UserRole } from '../../type'
+import { BookingStatus, PaymentStatus, RequestWithCookies, UserRole } from '../../type'
 import mediaUtils from '../../utils/media'
 import slipokUtils from '../../utils/slipok'
 import encryptionUtils from '../../utils/encryption'
@@ -58,9 +58,11 @@ const payBooking = async(
   // Verify slip via SlipOK if the venue has configured an API key
   const court = await CourtModel.findById(booking.courtID)
   const venue = court ? await VenueModel.findById(court.venueID) : null
-  const slipokConfig = venue?.slipok as { branchId?: string; apiKey?: string } | undefined
+  const slipokConfig = venue?.slipok as { branchId?: string; apiKey?: string; enabled?: boolean } | undefined
 
-  if (slipokConfig?.apiKey && slipokConfig?.branchId) {
+  let slipokVerified = false
+
+  if (slipokConfig?.enabled && slipokConfig?.apiKey && slipokConfig?.branchId) {
     try {
       const apiKey = encryptionUtils.decrypt(slipokConfig.apiKey, config.ENCRYPTION_KEY)
       const apiUrl = `https://api.slipok.com/api/line/apikey/${slipokConfig.branchId}`
@@ -79,6 +81,7 @@ const payBooking = async(
         })
         return
       }
+      slipokVerified = true
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Slip verification failed'
       res.status(400).json({ message })
@@ -95,7 +98,8 @@ const payBooking = async(
   const updateQuery: Record<string, unknown> = {
     slip: uploadedSlip.url,
     slipTimestamp: new Date(),
-    paymentStatus: PaymentStatus.Pending,
+    paymentStatus: slipokVerified ? PaymentStatus.Paid : PaymentStatus.Pending,
+    ...(slipokVerified ? { status: BookingStatus.Confirmed } : {}),
   }
 
   if (note) {
@@ -110,7 +114,9 @@ const payBooking = async(
   const updatedBookings = await BookingModel.find({ bookingBundleID })
 
   res.json({
-    message: 'Payment recorded for entire booking bundle.',
+    message: slipokVerified
+      ? 'Payment verified and booking confirmed.'
+      : 'Payment recorded for entire booking bundle.',
     bundleID: bookingBundleID,
     bookingCount: updatedBookings.length,
     bookings: updatedBookings,
