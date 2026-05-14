@@ -2,7 +2,9 @@ import { Request, Response } from 'express'
 import BookingModel from '../../schema/booking'
 import CourtModel from '../../schema/court'
 import VenueModel from '../../schema/venue'
+import UserModel from '../../schema/user'
 import requestUserUtils from '../../utils/requestUser'
+import sendBookingConfirmationEmail from '../../utils/bookingEmail'
 import { BookingStatus, PaymentStatus, RequestWithCookies } from '../../type'
 
 const approvePayment = async(
@@ -56,6 +58,34 @@ const approvePayment = async(
 
   const updatedBookings = await BookingModel.find({ bookingBundleID })
   res.json({ message: 'Payment approved', bookings: updatedBookings })
+
+  // Send payment approved email (fire-and-forget)
+  const firstBooking = updatedBookings[0]
+  if (firstBooking) {
+    const guestEmail = firstBooking.guestEmail
+    let userEmail: string | undefined
+    if (!guestEmail && firstBooking.userID) {
+      const booker = await UserModel.findById(firstBooking.userID).lean()
+      userEmail = booker?.email
+    }
+    const venueName = venue.name?.en || venue.name?.th || ''
+    const bookingRef = firstBooking.bookingRef ?? ''
+    const totalPrice = updatedBookings.reduce((sum, b) => sum + b.totalPrice, 0)
+    const currency = firstBooking.currency ?? ''
+
+    sendBookingConfirmationEmail({
+      bookings: updatedBookings,
+      bookingBundleID,
+      bookingRef,
+      guestEmail,
+      guestName: firstBooking.guestName,
+      userEmail,
+      venueName,
+      totalPrice,
+      currency,
+      emailType: 'payment_approved',
+    }).catch((err) => console.error('Failed to send payment approval email:', err))
+  }
 }
 
 export default approvePayment

@@ -5,6 +5,7 @@ import CourtModel from '../../schema/court'
 import RecurringGroupModel from '../../schema/recurringGroup'
 import VenueModel from '../../schema/venue'
 import bookingUtils from '../../utils/booking'
+import sendBookingConfirmationEmail from '../../utils/bookingEmail'
 import { BookingStatus, BookingType, PaymentStatus, RecurringPattern, ResaleOutcome, ResponseLocals } from '../../type'
 
 function generateBookingRef(): string {
@@ -143,6 +144,19 @@ const createRecurring = async(
   await recurringGroup.save()
 
   res.status(201).json({ recurringGroup, bookings })
+
+  // Send confirmation email (fire-and-forget)
+  const venueName = venue.name?.en || venue.name?.th || ''
+  const totalPrice = bookings.reduce((sum, b) => sum + b.totalPrice, 0)
+  sendBookingConfirmationEmail({
+    bookings,
+    bookingBundleID: bookingBundleID.toString(),
+    bookingRef,
+    userEmail: res.locals.user.email,
+    venueName,
+    totalPrice,
+    currency: court.currency,
+  }).catch((err) => console.error('Failed to send booking confirmation email:', err))
 }
 
 export default createRecurring

@@ -5,6 +5,7 @@ import CourtModel from '../../schema/court'
 import VenueModel from '../../schema/venue'
 import bookingUtils from '../../utils/booking'
 import requestUserUtils from '../../utils/requestUser'
+import sendBookingConfirmationEmail from '../../utils/bookingEmail'
 import { BookingStatus, BookingType, PaymentStatus, RequestWithCookies, ResaleOutcome } from '../../type'
 
 function generateBookingRef(): string {
@@ -77,6 +78,7 @@ const createSingle = async(
     totalPrice: number;
     currency: string;
   }> = []
+  let firstVenueName = ''
 
   for (const item of bookingItems) {
     const bookingDate = bookingUtils.normalizeDate(item.date)
@@ -94,6 +96,7 @@ const createSingle = async(
       res.status(404).json({ message: 'Venue not found' })
       return
     }
+    if (!firstVenueName) firstVenueName = venue.name?.en || venue.name?.th || ''
 
     const userID = currentUser?.id?.toString()
     const isVenueAdmin = userID && (
@@ -196,17 +199,30 @@ const createSingle = async(
 
   if (savedBookings.length === 1 && (!req.body.items || req.body.items.length <= 1)) {
     res.status(201).json(savedBookings[0])
-    return
+  } else {
+    const totalPrice = savedBookings.reduce((sum, booking) => sum + booking.totalPrice, 0)
+    res.status(201).json({
+      bookingBundleID,
+      bookingRef,
+      bookingCount: savedBookings.length,
+      totalPrice,
+      bookings: savedBookings,
+    })
   }
 
+  // Send confirmation email (fire-and-forget — do not block response)
   const totalPrice = savedBookings.reduce((sum, booking) => sum + booking.totalPrice, 0)
-  res.status(201).json({
-    bookingBundleID,
-    bookingRef,
-    bookingCount: savedBookings.length,
-    totalPrice,
+  sendBookingConfirmationEmail({
     bookings: savedBookings,
-  })
+    bookingBundleID: bookingBundleID.toString(),
+    bookingRef,
+    guestEmail: req.body.guestEmail || undefined,
+    guestName: req.body.guestName || undefined,
+    userEmail: currentUser?.email || undefined,
+    venueName: firstVenueName,
+    totalPrice,
+    currency: savedBookings[0]?.currency ?? '',
+  }).catch((err) => console.error('Failed to send booking confirmation email:', err))
 }
 
 export default createSingle

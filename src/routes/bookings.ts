@@ -6,6 +6,7 @@ const router = express.Router()
 
 router.get('/', middlewares.auth, bookingController.get)
 router.get('/venue-admin', middlewares.auth, bookingController.getVenueBookings)
+router.get('/bundles/:bookingBundleID', bookingController.getBundle)
 router.get('/:id', bookingController.getById)
 router.post('/', bookingController.createSingle)
 router.post('/recurring', middlewares.auth, bookingController.createRecurring)

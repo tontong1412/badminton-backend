@@ -87,6 +87,7 @@ export interface MailContent {
   to: string;
   subject: string;
   text: string;
+  html?: string;
 }
 
 export interface MailOptions extends MailContent {
