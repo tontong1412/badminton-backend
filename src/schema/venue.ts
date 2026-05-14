@@ -36,6 +36,7 @@ export interface VenueDocument extends Document {
   slipok?: VenueSlipOK;
   coverImage?: string;
   logo?: string;
+  facilities: string[];
 }
 
 const holidaySchema = new Schema<HolidaySchedule>({
@@ -110,6 +111,7 @@ const venueSchema = new Schema<VenueDocument>({
   },
   coverImage: { type: String, trim: true },
   logo: { type: String, trim: true },
+  facilities: { type: [String], default: [] },
 }, {
   timestamps: { createdAt: true, updatedAt: true },
 })
