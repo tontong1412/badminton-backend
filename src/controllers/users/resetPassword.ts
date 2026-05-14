@@ -1,4 +1,4 @@
-import { NextFunction, Request, Response } from 'express'
+import { Request, Response } from 'express'
 import argon2  from 'argon2'
 import UserModel from '../../schema/user'
 import { ErrorResponse } from '../../type'
@@ -7,8 +7,7 @@ import config from '../../config'
 
 const resetPassword = async(
   req: Request<{token: string}, unknown, {password: string}, unknown>,
-  res: Response<ErrorResponse>,
-  next: NextFunction): Promise<void> => {
+  res: Response<ErrorResponse>): Promise<void> => {
   const { token } = req.params
   const { password } = req.body
 
@@ -27,8 +26,7 @@ const resetPassword = async(
     return
   }catch(error){
     console.error(error)
-    next(error)
-    return
+    throw error
   }
 }
 export default resetPassword
