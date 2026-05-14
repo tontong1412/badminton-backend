@@ -27,6 +27,8 @@ export interface VenueDocument extends Document {
   slotDurationMinutes: number;
   gapPolicy: GapPolicy;
   payment?: VenuePayment;
+  coverImage?: string;
+  logo?: string;
 }
 
 const holidaySchema = new Schema<HolidaySchedule>({
@@ -94,6 +96,8 @@ const venueSchema = new Schema<VenueDocument>({
     promptPayID: { type: String, trim: true },
     qrCodeUrl: { type: String, trim: true },
   },
+  coverImage: { type: String, trim: true },
+  logo: { type: String, trim: true },
 }, {
   timestamps: { createdAt: true, updatedAt: true },
 })
