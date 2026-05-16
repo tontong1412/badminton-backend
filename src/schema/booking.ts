@@ -6,6 +6,8 @@ export interface BookingDocument extends Document {
   bookingBundleID?: Types.ObjectId;
   bookingRef?: string;
   courtID: Types.ObjectId;
+  couponCode?: string;
+  discountAmount?: number;
   date: Date;
   startTime: string;
   endTime: string;
@@ -82,6 +84,8 @@ const bookingSchema = new Schema<BookingDocument>({
     required: true,
     default: PaymentStatus.Unpaid,
   },
+  couponCode: { type: String, trim: true, uppercase: true },
+  discountAmount: { type: Number, min: 0 },
   slip: String,
   slipTimestamp: Date,
   resaleListingID: {

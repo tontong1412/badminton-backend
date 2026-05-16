@@ -7,6 +7,7 @@ import bookingUtils from '../../utils/booking'
 import requestUserUtils from '../../utils/requestUser'
 import sendBookingConfirmationEmail from '../../utils/bookingEmail'
 import { BookingStatus, BookingType, PaymentStatus, RequestWithCookies, ResaleOutcome } from '../../type'
+import CouponModel from '../../schema/coupon'
 
 function generateBookingRef(): string {
   const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'
@@ -34,6 +35,7 @@ interface CreateSingleBookingPayload {
   slip?: string;
   note?: string;
   bookedAsAdmin?: boolean;
+  couponCode?: string;
 }
 
 const createSingle = async(
@@ -41,7 +43,7 @@ const createSingle = async(
   res: Response,
 ): Promise<void> => {
   const currentUser = requestUserUtils.getOptionalUser(req)
-  const { slip, note } = req.body
+  const { slip, note, couponCode } = req.body
 
   const bookingItems: CreateSingleBookingItem[] = req.body.items && req.body.items.length > 0
     ? req.body.items
@@ -78,6 +80,7 @@ const createSingle = async(
     durationMinutes: number;
     totalPrice: number;
     currency: string;
+    discountAmount?: number;
   }> = []
   let firstVenueName = ''
 
@@ -175,6 +178,53 @@ const createSingle = async(
   const bookingBundleID = new Types.ObjectId()
   const bookingRef = generateBookingRef()
 
+  // Validate and apply coupon discount if provided
+  let appliedCouponCode: string | undefined
+  let totalDiscountAmount = 0
+
+  if (couponCode) {
+    const coupon = await CouponModel.findOne({ code: couponCode.toUpperCase().trim() })
+    if (!coupon || !coupon.isActive) {
+      res.status(422).json({ message: 'Invalid or inactive coupon code.' })
+      return
+    }
+    if (coupon.expiresAt && coupon.expiresAt < new Date()) {
+      res.status(422).json({ message: 'This coupon has expired.' })
+      return
+    }
+    if (coupon.maxUses != null && coupon.usedCount >= coupon.maxUses) {
+      res.status(422).json({ message: 'This coupon has reached its usage limit.' })
+      return
+    }
+    // Check venue scope using first item's venue
+    const firstCourt = await CourtModel.findById(draftBookings[0].courtID)
+    if (coupon.venueID && coupon.venueID.toString() !== firstCourt?.venueID.toString()) {
+      res.status(422).json({ message: 'This coupon is not valid for this venue.' })
+      return
+    }
+
+    const undiscountedTotal = draftBookings.reduce((s, b) => s + b.totalPrice, 0)
+    const rawDiscount = coupon.discountType === 'percentage'
+      ? Number(((undiscountedTotal * coupon.discountValue) / 100).toFixed(2))
+      : Math.min(coupon.discountValue, undiscountedTotal)
+    totalDiscountAmount = (coupon.discountType === 'percentage' && coupon.maxDiscountAmount)
+      ? Math.min(rawDiscount, coupon.maxDiscountAmount)
+      : rawDiscount
+
+    // Apply discount proportionally across bookings
+    if (totalDiscountAmount > 0 && undiscountedTotal > 0) {
+      for (const booking of draftBookings) {
+        const share = booking.totalPrice / undiscountedTotal
+        const bookingDiscount = Number((totalDiscountAmount * share).toFixed(2))
+        booking.totalPrice = Number((booking.totalPrice - bookingDiscount).toFixed(2))
+        booking.discountAmount = bookingDiscount
+      }
+    }
+
+    appliedCouponCode = coupon.code
+    await CouponModel.findByIdAndUpdate(coupon._id, { $inc: { usedCount: 1 } })
+  }
+
   const savedBookings = await BookingModel.insertMany(draftBookings.map((item) => ({
     bookingBundleID,
     bookingRef,
@@ -185,6 +235,8 @@ const createSingle = async(
     durationMinutes: item.durationMinutes,
     totalPrice: item.totalPrice,
     currency: item.currency,
+    couponCode: appliedCouponCode,
+    discountAmount: item.discountAmount,
     bookerType: currentUser ? 'user' : 'guest',
     userID: req.body.bookedAsAdmin ? undefined : currentUser?.id,
     guestName: req.body.guestName || undefined,

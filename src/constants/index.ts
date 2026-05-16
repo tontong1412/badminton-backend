@@ -11,7 +11,8 @@ const DATABASE  = {
     EVENT: 'event',
     BOOKING: 'booking',
     RECURRING_GROUP: 'recurringGroup',
-    RESALE_LISTING: 'resaleListing'
+    RESALE_LISTING: 'resaleListing',
+    COUPON: 'coupon',
   }
 }
 

@@ -13,6 +13,7 @@ import userRouter from './routes/users'
 import tournamentRouter from './routes/tournaments'
 import eventRouter from './routes/events'
 import venueRouter from './routes/venues'
+import couponRouter from './routes/coupons'
 import config from './config'
 import './utils/database'
 import { startBookingExpiryJob } from './utils/bookingExpiry'
@@ -34,6 +35,7 @@ app.get('/ping', (_req, res) => {
 
 app.use('/sessions', sessionRouter)
 app.use('/venues', venueRouter)
+app.use('/coupons', couponRouter)
 app.use('/courts', courtRouter)
 app.use('/bookings', bookingRouter)
 app.use('/resale', resaleRouter)
