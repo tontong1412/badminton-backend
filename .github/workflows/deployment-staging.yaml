@@ -69,7 +69,7 @@ jobs:
       CLOUDINARY_URL: ${{ secrets.CLOUDINARY_URL }}
       CLOUDINARY_PREFIX: ${{ vars.CLOUDINARY_PREFIX }}
       ENCRYPTION_KEY: ${{ secrets.ENCRYPTION_KEY }}
-      EMAIL: ${{ secrets.EMAIL }}
+      EMAIL: ${{ vars.EMAIL }}
       EMAIL_PASSWORD: ${{ secrets.EMAIL_PASSWORD }}
       CLIENT_URL: ${{ vars.CLIENT_URL }}
       IMAGE_SHA: ${{ github.sha }}
