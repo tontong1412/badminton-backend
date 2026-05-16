@@ -29,7 +29,20 @@ const update = async(req: Request<{ id: string }>, res: Response): Promise<void>
     delete (payload.slipok as Record<string, unknown>).enabled
   }
 
-  const venue = await VenueModel.findByIdAndUpdate(req.params.id, payload, { new: true })
+  // Build $set payload using dot notation for slipok fields to avoid
+  // replacing the entire subdocument (which would wipe branchId/apiKey/enabled)
+  const setPayload: Record<string, unknown> = {}
+  for (const [key, value] of Object.entries(payload)) {
+    if (key === 'slipok' && value && typeof value === 'object') {
+      for (const [sk, sv] of Object.entries(value as Record<string, unknown>)) {
+        setPayload[`slipok.${sk}`] = sv
+      }
+    } else {
+      setPayload[key] = value
+    }
+  }
+
+  const venue = await VenueModel.findByIdAndUpdate(req.params.id, { $set: setPayload }, { new: true })
 
   if (!venue) {
     res.status(404).json({ message: 'Venue not found' })
