@@ -1,0 +1,133 @@
+name: Staging Deployment pipeline
+
+on:
+  push:
+    branches:
+      - feature/*
+
+env:
+  ENV_NAME: staging
+  REGISTRY: ghcr.io
+
+jobs:
+  lint:
+    name: Lint and Format Check
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Install Dependencies
+        run: npm ci
+
+      - name: Run Linter
+        run: npm run lint
+
+  build:
+    name: Build and Push Docker Image (${{ env.ENV_NAME }})
+    runs-on: ubuntu-24.04
+    needs: lint
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and Push Docker Image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          push: true
+          tags: |
+            ghcr.io/${{ github.repository_owner }}/api-${{ env.ENV_NAME }}:${{ github.sha }}
+            ghcr.io/${{ github.repository_owner }}/api-${{ env.ENV_NAME }}:latest
+
+  deploy:
+    name: Deploy to staging (EC2)
+    runs-on: ubuntu-24.04
+    needs: build
+    environment: staging
+    env:
+      CF_TUNNEL_TOKEN: ${{ secrets.CF_TUNNEL_TOKEN }}
+      GH_ACTOR: ${{ github.actor }}
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      DOCKER_NETWORK: ${{ secrets.DOCKER_NETWORK }}
+      DB_URI: ${{ secrets.DB_URI }}
+      ACCESS_SECRET: ${{ secrets.ACCESS_SECRET }}
+      REFRESH_SECRET: ${{ secrets.REFRESH_SECRET }}
+      CLOUDINARY_URL: ${{ secrets.CLOUDINARY_URL }}
+      CLOUDINARY_PREFIX: ${{ vars.CLOUDINARY_PREFIX }}
+      ENCRYPTION_KEY: ${{ secrets.ENCRYPTION_KEY }}
+      EMAIL: ${{ secrets.EMAIL }}
+      EMAIL_PASSWORD: ${{ secrets.EMAIL_PASSWORD }}
+      CLIENT_URL: ${{ vars.CLIENT_URL }}
+      IMAGE_SHA: ${{ github.sha }}
+      ENV_NAME: staging
+      REPO_OWNER: ${{ github.repository_owner }}
+    steps:
+      - name: SSH and Deploy
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.SERVER_HOST }}
+          username: ${{ secrets.SERVER_USER }}
+          key: ${{ secrets.SERVER_SSH_KEY }}
+          envs: ENV_NAME,CF_TUNNEL_TOKEN,GH_ACTOR,GH_TOKEN,DOCKER_NETWORK,DB_URI,ACCESS_SECRET,REFRESH_SECRET,CLOUDINARY_URL,CLOUDINARY_PREFIX,ENCRYPTION_KEY,EMAIL,EMAIL_PASSWORD,CLIENT_URL,IMAGE_SHA,REPO_OWNER
+          script: |
+            TUNNEL_NAME="cloudflared-${ENV_NAME}"
+            APP_NAME="api-${ENV_NAME}"
+            REDIS_NAME="redis-${ENV_NAME}"
+            IMAGE="ghcr.io/${REPO_OWNER}/api-${ENV_NAME}:${IMAGE_SHA}"
+
+            # Log in to GitHub Container Registry
+            echo "${GH_TOKEN}" | sudo docker login ghcr.io -u "${GH_ACTOR}" --password-stdin
+
+            # Ensure Redis is running
+            if ! sudo docker ps --filter "name=^${REDIS_NAME}$" --format '{{.Names}}' | grep -q "^${REDIS_NAME}$"; then
+              sudo docker stop ${REDIS_NAME} || true
+              sudo docker rm ${REDIS_NAME} || true
+              sudo docker run -d --restart unless-stopped \
+                --name ${REDIS_NAME} \
+                --network ${DOCKER_NETWORK} \
+                redis:7-alpine
+            fi
+
+            # Ensure cloudflared tunnel is running
+            sudo docker stop ${TUNNEL_NAME} || true
+            sudo docker rm ${TUNNEL_NAME} || true
+            sudo docker run -d --restart unless-stopped \
+              --name ${TUNNEL_NAME} \
+              --network ${DOCKER_NETWORK} \
+              cloudflare/cloudflared:latest \
+              tunnel --no-autoupdate run --token ${CF_TUNNEL_TOKEN}
+
+            # Deploy app container
+            sudo docker pull ${IMAGE}
+            sudo docker stop ${APP_NAME} || true
+            sudo docker rm ${APP_NAME} || true
+            sudo docker run -d --restart unless-stopped \
+              --name ${APP_NAME} \
+              --network ${DOCKER_NETWORK} \
+              -p 8081:8080 \
+              -e NODE_ENV=${ENV_NAME} \
+              -e PORT=8080 \
+              -e DB_URI="${DB_URI}" \
+              -e REDIS_URL="redis://${REDIS_NAME}:6379" \
+              -e ACCESS_SECRET="${ACCESS_SECRET}" \
+              -e REFRESH_SECRET="${REFRESH_SECRET}" \
+              -e CLOUDINARY_URL="${CLOUDINARY_URL}" \
+              -e CLOUDINARY_PREFIX="${CLOUDINARY_PREFIX}" \
+              -e ENCRYPTION_KEY="${ENCRYPTION_KEY}" \
+              -e EMAIL="${EMAIL}" \
+              -e EMAIL_PASSWORD="${EMAIL_PASSWORD}" \
+              -e CLIENT_URL="${CLIENT_URL}" \
+              ${IMAGE}
