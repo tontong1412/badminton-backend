@@ -1,4 +1,5 @@
 import { Request, Response } from 'express'
+import { Types } from 'mongoose'
 import BookingModel from '../../schema/booking'
 import CourtModel from '../../schema/court'
 import VenueModel from '../../schema/venue'
@@ -75,7 +76,7 @@ const approvePayment = async(
 
     const uniqueCourtIDs = [...new Set(updatedBookings.map((b) => b.courtID.toString()))]
     const courts = await CourtModel.find({ _id: { $in: uniqueCourtIDs } }).lean()
-    const courtNameMap = new Map(courts.map((c) => [c._id.toString(), c.name]))
+    const courtNameMap = new Map(courts.map((c) => [(c._id as Types.ObjectId).toString(), c.name]))
 
     sendBookingConfirmationEmail({
       bookings: updatedBookings.map((b) => ({

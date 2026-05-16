@@ -15,8 +15,6 @@ const {
   validateBookingWindow,
   calculateTotalPrice,
   enumerateRecurringDates,
-  checkSlotAvailability,
-  validateBookingGap,
 } = bookingUtils
 
 // ─── timeToMinutes ────────────────────────────────────────────────────────────

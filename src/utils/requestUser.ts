@@ -1,8 +1,8 @@
 import config from '../config'
-import { RequestWithCookies, TokenPayload } from '../type'
+import { TokenPayload } from '../type'
 import tokenUtils from './token'
 
-const getOptionalUser = (req: RequestWithCookies): TokenPayload | null => {
+const getOptionalUser = (req: { cookies: { access?: string } }): TokenPayload | null => {
   const token = req.cookies.access
 
   if (!token) {

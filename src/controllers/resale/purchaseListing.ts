@@ -1,4 +1,4 @@
-import { Request, Response } from 'express'
+import { Response } from 'express'
 import BookingModel from '../../schema/booking'
 import ResaleListingModel from '../../schema/resaleListing'
 import requestUserUtils from '../../utils/requestUser'
@@ -13,7 +13,7 @@ interface PurchaseListingPayload {
 }
 
 const purchaseListing = async(
-  req: RequestWithCookies & Request<{ id: string }, unknown, PurchaseListingPayload>,
+  req: RequestWithCookies<{ id: string }, unknown, PurchaseListingPayload>,
   res: Response,
 ): Promise<void> => {
   const listing = await ResaleListingModel.findById(req.params.id)

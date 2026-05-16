@@ -71,7 +71,10 @@ export interface ErrorResponse {
   message: string;
 }
 
-export interface RequestWithCookies extends Request {
+export interface RequestWithCookies<
+  P = Record<string, string>,
+  ResBody = unknown,
+  ReqBody = unknown> extends Request<P, ResBody, ReqBody> {
   cookies: {
     access?: string;
     refresh?: string;

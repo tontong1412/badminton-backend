@@ -54,7 +54,7 @@ const getAvailability = async(req: Request<{ id: string }>, res: Response): Prom
   const startSlots = bookingUtils.generateSlots(schedule.open, effectiveClose, stepMinutes, Number(court.get('slotStartOffsetMinutes') ?? 0))
   const slotResults = await Promise.all(startSlots.map(async(startTime) => {
     const endTime = bookingUtils.addMinutes(startTime, requestedDuration)
-    const availability = await bookingUtils.checkSlotAvailability(court.id, new Date(date), startTime, endTime)
+    const availability = await bookingUtils.checkSlotAvailability(court.id as string, new Date(date), startTime, endTime)
     if (!availability.available) {
       return {
         startTime,
@@ -65,7 +65,7 @@ const getAvailability = async(req: Request<{ id: string }>, res: Response): Prom
     }
 
     const gapValidation = await bookingUtils.validateBookingGap(
-      court.id,
+      court.id as string,
       new Date(date),
       startTime,
       endTime,
@@ -87,7 +87,7 @@ const getAvailability = async(req: Request<{ id: string }>, res: Response): Prom
     durationMinutes: requestedDuration,
     court,
     venue: {
-      id: venue.id,
+      id: venue.id as string,
       name: venue.name,
       gapPolicy: venue.gapPolicy,
       openTime: schedule.open,

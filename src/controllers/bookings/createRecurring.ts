@@ -74,7 +74,7 @@ const createRecurring = async(
     }
 
     const availability = await bookingUtils.checkSlotAvailability(
-      court.id,
+      court.id as string,
       date,
       req.body.startTime,
       req.body.endTime,
@@ -85,7 +85,7 @@ const createRecurring = async(
     }
 
     const gapValidation = await bookingUtils.validateBookingGap(
-      court.id,
+      court.id as string,
       date,
       req.body.startTime,
       req.body.endTime,
@@ -140,7 +140,7 @@ const createRecurring = async(
     resaleOutcome: ResaleOutcome.None,
   })))
 
-  recurringGroup.bookingIDs = bookings.map((booking) => new Types.ObjectId(booking.id))
+  recurringGroup.bookingIDs = bookings.map((booking) => new Types.ObjectId(booking.id as string))
   await recurringGroup.save()
 
   res.status(201).json({ recurringGroup, bookings })

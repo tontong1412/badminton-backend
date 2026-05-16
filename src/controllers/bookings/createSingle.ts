@@ -1,4 +1,4 @@
-import { Request, Response } from 'express'
+import { Response } from 'express'
 import { Types } from 'mongoose'
 import BookingModel from '../../schema/booking'
 import CourtModel from '../../schema/court'
@@ -37,7 +37,7 @@ interface CreateSingleBookingPayload {
 }
 
 const createSingle = async(
-  req: RequestWithCookies & Request<unknown, unknown, CreateSingleBookingPayload>,
+  req: RequestWithCookies<unknown, unknown, CreateSingleBookingPayload>,
   res: Response,
 ): Promise<void> => {
   const currentUser = requestUserUtils.getOptionalUser(req)
@@ -91,7 +91,7 @@ const createSingle = async(
       res.status(404).json({ message: `Court not found for item ${item.courtID}` })
       return
     }
-    courtNameMap.set(court.id, court.name)
+    courtNameMap.set(court.id as string, court.name)
 
     const venue = await VenueModel.findById(court.venueID)
     if (!venue) {
@@ -136,7 +136,7 @@ const createSingle = async(
       return
     }
 
-    const availability = await bookingUtils.checkSlotAvailability(court.id, bookingDate, item.startTime, item.endTime)
+    const availability = await bookingUtils.checkSlotAvailability(court.id as string, bookingDate, item.startTime, item.endTime)
     if (!availability.available) {
       res.status(409).json({ message: `Court ${court.name} is already booked for ${item.startTime}-${item.endTime}.` })
       return
@@ -144,7 +144,7 @@ const createSingle = async(
 
     if (!isVenueAdmin) {
       const gapValidation = await bookingUtils.validateBookingGap(
-        court.id,
+        court.id as string,
         bookingDate,
         item.startTime,
         item.endTime,
@@ -160,7 +160,7 @@ const createSingle = async(
 
     const durationMinutes = bookingUtils.calculateDurationMinutes(item.startTime, item.endTime)
     draftBookings.push({
-      courtID: new Types.ObjectId(court.id),
+      courtID: new Types.ObjectId(court.id as string),
       date: bookingDate,
       startTime: item.startTime,
       endTime: item.endTime,

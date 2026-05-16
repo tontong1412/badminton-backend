@@ -68,7 +68,7 @@ const createListing = async(
     currency: booking.currency,
   }).save()
 
-  booking.resaleListingID = new Types.ObjectId(listing.id)
+  booking.resaleListingID = new Types.ObjectId(listing.id as string)
   booking.resaleOutcome = ResaleOutcome.Listed
   await booking.save()
 

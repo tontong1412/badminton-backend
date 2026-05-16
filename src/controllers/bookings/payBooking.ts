@@ -19,7 +19,7 @@ const payBooking = async(
   res: Response,
 ): Promise<void> => {
   const bookingBundleID = req.params.bookingBundleID
-  const { slip, note } = req.body as PayBookingPayload
+  const { slip, note } = req.body
 
   if (!slip) {
     res.status(400).json({ message: 'Payment slip is required.' })

@@ -1,5 +1,5 @@
 import { NextFunction, Request, Response } from 'express'
-import { RequestWithCookies, UserRole } from '../type'
+import { RequestWithCookies, TokenPayload, UserRole } from '../type'
 import tokenUtils from '../utils/token'
 import config from '../config'
 import VenueModel from '../schema/venue'
@@ -49,7 +49,7 @@ const auth = (req: RequestWithCookies, res: Response, next: NextFunction) => {
 
 const adminAuth = (req: RequestWithCookies, res: Response, next: NextFunction) => {
   auth(req, res, () => {
-    if (res.locals.user.role !== UserRole.Admin) {
+    if ((res.locals.user as TokenPayload).role !== UserRole.Admin) {
       res.status(403).send('Forbidden')
       return
     }
@@ -63,7 +63,8 @@ const adminAuth = (req: RequestWithCookies, res: Response, next: NextFunction) =
  * Requires :id param to be the venue ID.
  */
 const venueManagerAuth = (req: RequestWithCookies & Request<{ id: string }>, res: Response, next: NextFunction) => {
-  auth(req, res, async () => {
+  // eslint-disable-next-line @typescript-eslint/no-misused-promises
+  auth(req, res, async() => {
     try {
       const user = res.locals.user as { id: string; role: UserRole }
 

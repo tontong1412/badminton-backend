@@ -1,7 +1,7 @@
 import { Request, Response } from 'express'
 import VenueModel from '../../schema/venue'
 
-const addManager = async (req: Request<{ id: string }, unknown, { userID: string }>, res: Response): Promise<void> => {
+const addManager = async(req: Request<{ id: string }, unknown, { userID: string }>, res: Response): Promise<void> => {
   const { userID } = req.body
 
   if (!userID) {

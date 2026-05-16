@@ -10,7 +10,7 @@ const update = async(req: Request<{ id: string }>, res: Response): Promise<void>
   if (Array.isArray(payload.holidays)) {
     payload.holidays = payload.holidays.map((holiday) => {
       const value = holiday as { date: string }
-      return { ...holiday, date: new Date(value.date) }
+      return { ...(holiday as Record<string, unknown>), date: new Date(value.date) }
     })
   }
 
