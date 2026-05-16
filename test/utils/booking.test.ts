@@ -330,8 +330,8 @@ describe('checkSlotAvailability', () => {
 // ─── validateBookingGap (mocked DB) ──────────────────────────────────────────
 
 describe('validateBookingGap', () => {
-  const gapPolicy = { enabled: true, minimumGapMinutes: 60 }
-  const disabledPolicy = { enabled: false, minimumGapMinutes: 60 }
+  const gapPolicy = { enabled: true, minimumGapMinutes: 60 as 30 | 60 }
+  const disabledPolicy = { enabled: false, minimumGapMinutes: 60 as 30 | 60 }
 
   beforeEach(() => {
     vi.resetModules()
