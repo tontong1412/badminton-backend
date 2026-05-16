@@ -4,6 +4,7 @@ import tokenUtils from '../../utils/token'
 import config from '../../config'
 import constants from '../../constants'
 import PlayerModel from '../../schema/player'
+import UserModel from '../../schema/user'
 
 const refresh = async(
   req: RequestWithCookies,
@@ -37,6 +38,13 @@ const refresh = async(
       email: decoded.email,
       playerID: decoded.playerID,
       role: decoded.role,
+    }
+
+    // If role is missing from the token (old tokens pre-dating role support),
+    // fetch it from the database so the response always includes the correct role.
+    if (!userPayload.role) {
+      const dbUser = await UserModel.findById(decoded.id).select('role')
+      if (dbUser) userPayload.role = dbUser.role
     }
 
     const newAccessToken = tokenUtils.create(userPayload, config.ACCESS_SECRET, constants.TOKEN.EXPIRE_TIME.ACCESS)

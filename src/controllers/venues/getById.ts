@@ -1,7 +1,13 @@
 import { Request, Response } from 'express'
+import { Types } from 'mongoose'
 import VenueModel from '../../schema/venue'
 
 const getById = async(req: Request<{ id: string }>, res: Response): Promise<void> => {
+  if (!Types.ObjectId.isValid(req.params.id)) {
+    res.status(400).json({ error: 'Invalid venue ID' })
+    return
+  }
+
   const venue = await VenueModel.findById(req.params.id)
 
   if (!venue) {

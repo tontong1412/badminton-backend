@@ -1,4 +1,5 @@
 import { NextFunction, Request, Response } from 'express'
+import { Types } from 'mongoose'
 import { RequestWithCookies, TokenPayload, UserRole } from '../type'
 import tokenUtils from '../utils/token'
 import config from '../config'
@@ -71,6 +72,11 @@ const venueManagerAuth = (req: RequestWithCookies & Request<{ id: string }>, res
       // System admins always pass
       if (user.role === UserRole.Admin) {
         next()
+        return
+      }
+
+      if (!Types.ObjectId.isValid(req.params.id)) {
+        res.status(400).json({ error: 'Invalid venue ID' })
         return
       }
 
