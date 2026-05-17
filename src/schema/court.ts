@@ -16,6 +16,7 @@ export interface CourtDocument extends Document {
   slotStartOffsetMinutes: number;
   currency: string;
   status: 'active' | 'inactive';
+  courtType?: string;
 }
 
 const pricingRuleSchema = new Schema<CourtPricingRule>({
@@ -42,6 +43,7 @@ const courtSchema = new Schema<CourtDocument>({
     default: 'active',
     required: true,
   },
+  courtType: { type: String, trim: true },
 }, {
   timestamps: { createdAt: true, updatedAt: true },
 })
