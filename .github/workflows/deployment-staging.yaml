@@ -72,6 +72,7 @@ jobs:
       EMAIL: ${{ vars.EMAIL }}
       EMAIL_PASSWORD: ${{ secrets.EMAIL_PASSWORD }}
       CLIENT_URL: ${{ vars.CLIENT_URL }}
+      GOOGLE_CLIENT_ID: ${{ secrets.GOOGLE_CLIENT_ID }}
       IMAGE_SHA: ${{ github.sha }}
       ENV_NAME: staging
       REPO_OWNER: ${{ github.repository_owner }}
@@ -131,4 +132,5 @@ jobs:
               -e EMAIL="${EMAIL}" \
               -e EMAIL_PASSWORD="${EMAIL_PASSWORD}" \
               -e CLIENT_URL="${CLIENT_URL}" \
+              -e GOOGLE_CLIENT_ID="${GOOGLE_CLIENT_ID}" \
               ${IMAGE}
