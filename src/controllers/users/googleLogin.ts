@@ -12,7 +12,7 @@ interface GoogleLoginBody {
   credential: string;
 }
 
-const googleLogin = async (
+const googleLogin = async(
   req: Request<unknown, unknown, GoogleLoginBody, unknown>,
   res: Response<LoginResponse | ErrorResponse>
 ): Promise<void> => {
