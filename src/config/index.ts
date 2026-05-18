@@ -17,6 +17,8 @@ const CLOUDINARY_PREFIX = process.env.CLOUDINARY_PREFIX || 'local-new'
 
 const ENCRYPTION_KEY = process.env.ENCRYPTION_KEY || 'change-this-in-production-32chars'
 
+const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID || null
+
 const EMAIL = {
   USER: process.env.EMAIL,
   PASSWORD: process.env.EMAIL_PASSWORD
@@ -37,4 +39,5 @@ export default {
   CLOUDINARY_PREFIX,
   CLOUDINARY_URL,
   ENCRYPTION_KEY,
+  GOOGLE_CLIENT_ID,
 }
