@@ -68,46 +68,19 @@ const purchaseListing = async(
     note: req.body.note,
   }).save()
 
-  // Cancel the original booking
-  sourceBooking.status = BookingStatus.Cancelled
-  sourceBooking.resaleOutcome = ResaleOutcome.Resold
-  await sourceBooking.save()
-
-  // If sub-range: create new bookings for the seller's remaining time segments
   if (listing.subStartTime && listing.subEndTime) {
-    const origStart = bookingUtils.timeToMinutes(sourceBooking.startTime)
-    const origEnd = bookingUtils.timeToMinutes(sourceBooking.endTime)
-    const subStart = bookingUtils.timeToMinutes(listing.subStartTime)
-    const subEnd = bookingUtils.timeToMinutes(listing.subEndTime)
-    const origTotal = origEnd - origStart
-    const pricePerMin = sourceBooking.totalPrice / origTotal
-
-    const remainingSegments: Array<{ startTime: string; endTime: string }> = []
-    if (subStart > origStart) remainingSegments.push({ startTime: sourceBooking.startTime, endTime: listing.subStartTime })
-    if (subEnd < origEnd) remainingSegments.push({ startTime: listing.subEndTime, endTime: sourceBooking.endTime })
-
-    for (const seg of remainingSegments) {
-      const segDuration = bookingUtils.timeToMinutes(seg.endTime) - bookingUtils.timeToMinutes(seg.startTime)
-      await new BookingModel({
-        courtID: sourceBooking.courtID,
-        date: sourceBooking.date,
-        startTime: seg.startTime,
-        endTime: seg.endTime,
-        durationMinutes: segDuration,
-        totalPrice: Number((pricePerMin * segDuration).toFixed(2)),
-        currency: sourceBooking.currency,
-        bookerType: sourceBooking.bookerType,
-        userID: sourceBooking.userID,
-        guestName: sourceBooking.guestName,
-        guestPhone: sourceBooking.guestPhone,
-        guestEmail: sourceBooking.guestEmail,
-        bookingType: BookingType.Single,
-        status: BookingStatus.Confirmed,
-        paymentStatus: PaymentStatus.Paid,
-        resaleOutcome: ResaleOutcome.None,
-        note: `Remaining slot from resale of booking ${sourceBooking.id}`,
-      }).save()
-    }
+    // Sub-range purchase: keep the original booking alive, record the sold range,
+    // and reset the listing reference so the seller can list other hours.
+    if (!sourceBooking.resaleSoldRanges) sourceBooking.resaleSoldRanges = []
+    sourceBooking.resaleSoldRanges.push({ startTime: buyerStartTime, endTime: buyerEndTime })
+    sourceBooking.resaleListingID = undefined
+    sourceBooking.resaleOutcome = ResaleOutcome.None
+    await sourceBooking.save()
+  } else {
+    // Full-booking purchase: cancel the original booking.
+    sourceBooking.status = BookingStatus.Cancelled
+    sourceBooking.resaleOutcome = ResaleOutcome.Resold
+    await sourceBooking.save()
   }
 
   listing.status = ResaleStatus.Sold

@@ -161,16 +161,25 @@ const createSingle = async(
       }
     }
 
-    const durationMinutes = bookingUtils.calculateDurationMinutes(item.startTime, item.endTime)
-    draftBookings.push({
-      courtID: new Types.ObjectId(court.id as string),
-      date: bookingDate,
-      startTime: item.startTime,
-      endTime: item.endTime,
-      durationMinutes,
-      totalPrice: bookingUtils.calculateTotalPriceWithRules(court, item.startTime, item.endTime),
-      currency: court.currency,
-    })
+    // Split the booking into 1-hour segments; each segment becomes its own booking document
+    let cursor = bookingUtils.timeToMinutes(item.startTime)
+    const endMinutes = bookingUtils.timeToMinutes(item.endTime)
+    while (cursor < endMinutes) {
+      const segEnd = Math.min(cursor + 60, endMinutes)
+      const segStart = bookingUtils.minutesToTime(cursor)
+      const segEndStr = bookingUtils.minutesToTime(segEnd)
+      const segDuration = segEnd - cursor
+      draftBookings.push({
+        courtID: new Types.ObjectId(court.id as string),
+        date: bookingDate,
+        startTime: segStart,
+        endTime: segEndStr,
+        durationMinutes: segDuration,
+        totalPrice: bookingUtils.calculateTotalPriceWithRules(court, segStart, segEndStr),
+        currency: court.currency,
+      })
+      cursor = segEnd
+    }
 
     inRequestByCourtDate.set(overlapKey, [...existingRanges, { startTime: item.startTime, endTime: item.endTime }])
   }

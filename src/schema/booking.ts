@@ -28,6 +28,7 @@ export interface BookingDocument extends Document {
   resaleListingID?: Types.ObjectId;
   resaleSourceListingID?: Types.ObjectId;
   resaleOutcome: ResaleOutcome;
+  resaleSoldRanges?: Array<{ startTime: string; endTime: string }>;
   note?: string;
 }
 
@@ -102,6 +103,10 @@ const bookingSchema = new Schema<BookingDocument>({
     required: true,
     default: ResaleOutcome.None,
   },
+  resaleSoldRanges: [{
+    startTime: { type: String, required: true },
+    endTime: { type: String, required: true },
+  }],
   note: String,
 }, {
   timestamps: { createdAt: true, updatedAt: true },
