@@ -25,7 +25,7 @@ export interface ResaleListingDocument extends Document {
 const resaleListingSchema = new Schema<ResaleListingDocument>({
   bookingID: {
     type: Schema.Types.ObjectId,
-    ref: constants.DATABASE.COLLECTION.BOOKING,
+    ref: 'Booking',
     required: true,
   },
   sellerID: {
