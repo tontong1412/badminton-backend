@@ -10,6 +10,8 @@ import { BookingStatus, ResaleOutcome, ResaleStatus, ResponseLocals } from '../.
 interface CreateListingPayload {
   bookingID: string;
   askingPrice: number;
+  subStartTime?: string;
+  subEndTime?: string;
 }
 
 const createListing = async(
@@ -41,9 +43,32 @@ const createListing = async(
     return
   }
 
-  const existingListing = await ResaleListingModel.findOne({ bookingID: booking._id, status: ResaleStatus.Active })
+  const { subStartTime, subEndTime } = req.body
+
+  // Validate sub-range if provided
+  if (subStartTime || subEndTime) {
+    if (!subStartTime || !subEndTime) {
+      res.status(400).json({ message: 'Both subStartTime and subEndTime are required together.' })
+      return
+    }
+    const bookingStart = bookingUtils.timeToMinutes(booking.startTime)
+    const bookingEnd = bookingUtils.timeToMinutes(booking.endTime)
+    const subStart = bookingUtils.timeToMinutes(subStartTime)
+    const subEnd = bookingUtils.timeToMinutes(subEndTime)
+    if (subStart < bookingStart || subEnd > bookingEnd || subStart >= subEnd) {
+      res.status(400).json({ message: 'Sub-range must fall within the booking time and be valid.' })
+      return
+    }
+  }
+
+  // Check for duplicate active listing for the same booking + sub-range
+  const existingListing = await ResaleListingModel.findOne({
+    bookingID: booking._id,
+    status: ResaleStatus.Active,
+    subStartTime: subStartTime ?? { $exists: false },
+  })
   if (existingListing) {
-    res.status(409).json({ message: 'An active resale listing already exists for this booking.' })
+    res.status(409).json({ message: 'An active resale listing already exists for this slot.' })
     return
   }
 
@@ -66,6 +91,8 @@ const createListing = async(
     venueOwnerID: venue.ownerUserID,
     askingPrice: req.body.askingPrice,
     currency: booking.currency,
+    subStartTime,
+    subEndTime,
   }).save()
 
   booking.resaleListingID = new Types.ObjectId(listing.id as string)

@@ -10,6 +10,8 @@ export interface ResaleListingDocument extends Document {
   askingPrice: number;
   currency: string;
   status: ResaleStatus;
+  subStartTime?: string;
+  subEndTime?: string;
   buyerType?: 'guest' | 'user';
   buyerID?: Types.ObjectId;
   buyerName?: string;
@@ -45,6 +47,8 @@ const resaleListingSchema = new Schema<ResaleListingDocument>({
   },
   askingPrice: { type: Number, required: true, min: 0 },
   currency: { type: String, required: true },
+  subStartTime: { type: String, trim: true },
+  subEndTime: { type: String, trim: true },
   status: {
     type: String,
     enum: Object.values(ResaleStatus),
@@ -93,7 +97,7 @@ resaleListingSchema.set('toJSON', {
 })
 
 resaleListingSchema.index(
-  { bookingID: 1 },
+  { bookingID: 1, subStartTime: 1 },
   { unique: true, partialFilterExpression: { status: ResaleStatus.Active } }
 )
 

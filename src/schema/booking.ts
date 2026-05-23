@@ -90,11 +90,11 @@ const bookingSchema = new Schema<BookingDocument>({
   slipTimestamp: Date,
   resaleListingID: {
     type: Schema.Types.ObjectId,
-    ref: constants.DATABASE.COLLECTION.RESALE_LISTING,
+    ref: 'ResaleListing',
   },
   resaleSourceListingID: {
     type: Schema.Types.ObjectId,
-    ref: constants.DATABASE.COLLECTION.RESALE_LISTING,
+    ref: 'ResaleListing',
   },
   resaleOutcome: {
     type: String,
