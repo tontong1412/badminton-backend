@@ -19,6 +19,12 @@ const ENCRYPTION_KEY = process.env.ENCRYPTION_KEY || 'change-this-in-production-
 
 const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID || null
 
+const SYSTEM_SLIPOK = {
+  BRANCH_ID: process.env.SYSTEM_SLIPOK_BRANCH_ID || null,
+  API_KEY: process.env.SYSTEM_SLIPOK_API_KEY || null,
+  ENABLED: process.env.SYSTEM_SLIPOK_ENABLED === 'true',
+}
+
 const EMAIL = {
   USER: process.env.EMAIL,
   PASSWORD: process.env.EMAIL_PASSWORD
@@ -40,4 +46,5 @@ export default {
   CLOUDINARY_URL,
   ENCRYPTION_KEY,
   GOOGLE_CLIENT_ID,
+  SYSTEM_SLIPOK,
 }

@@ -1,9 +1,17 @@
 import { Response } from 'express'
+import { Types } from 'mongoose'
 import BookingModel from '../../schema/booking'
 import ResaleListingModel from '../../schema/resaleListing'
 import requestUserUtils from '../../utils/requestUser'
 import bookingUtils from '../../utils/booking'
 import { BookingStatus, BookingType, PaymentStatus, RequestWithCookies, ResaleOutcome, ResaleStatus } from '../../type'
+
+function generateBookingRef(): string {
+  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'
+  let ref = ''
+  for (let i = 0; i < 6; i++) ref += chars[Math.floor(Math.random() * chars.length)]
+  return ref
+}
 
 interface PurchaseListingPayload {
   guestName?: string;
@@ -46,6 +54,8 @@ const purchaseListing = async(
   const buyerDuration = bookingUtils.timeToMinutes(buyerEndTime) - bookingUtils.timeToMinutes(buyerStartTime)
 
   const buyerBooking = await new BookingModel({
+    bookingBundleID: new Types.ObjectId(),
+    bookingRef: generateBookingRef(),
     courtID: sourceBooking.courtID,
     date: sourceBooking.date,
     startTime: buyerStartTime,
@@ -59,7 +69,7 @@ const purchaseListing = async(
     guestPhone: currentUser ? undefined : req.body.guestPhone,
     guestEmail: currentUser ? undefined : req.body.guestEmail,
     bookingType: BookingType.Single,
-    status: BookingStatus.Confirmed,
+    status: BookingStatus.Pending,
     paymentStatus: req.body.slip ? PaymentStatus.Pending : PaymentStatus.Unpaid,
     slip: req.body.slip,
     slipTimestamp: req.body.slip ? new Date() : undefined,

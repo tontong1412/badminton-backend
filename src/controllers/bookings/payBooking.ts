@@ -55,17 +55,35 @@ const payBooking = async(
     }
   }
 
-  // Verify slip via SlipOK if the venue has configured an API key
+  // Verify slip via SlipOK — resale bookings use system SlipOK; regular bookings use venue SlipOK
   const court = await CourtModel.findById(booking.courtID)
   const venue = court ? await VenueModel.findById(court.venueID) : null
-  const slipokConfig = venue?.slipok as { branchId?: string; apiKey?: string; enabled?: boolean } | undefined
+  const isResaleBooking = !!booking.resaleSourceListingID
+
+  let slipokBranchId: string | undefined
+  let slipokApiKey: string | undefined
+  let slipokEnabled = false
+
+  if (isResaleBooking) {
+    if (config.SYSTEM_SLIPOK.ENABLED && config.SYSTEM_SLIPOK.BRANCH_ID && config.SYSTEM_SLIPOK.API_KEY) {
+      slipokBranchId = config.SYSTEM_SLIPOK.BRANCH_ID
+      slipokApiKey = config.SYSTEM_SLIPOK.API_KEY
+      slipokEnabled = true
+    }
+  } else {
+    const slipokConfig = venue?.slipok as { branchId?: string; apiKey?: string; enabled?: boolean } | undefined
+    if (slipokConfig?.enabled && slipokConfig?.apiKey && slipokConfig?.branchId) {
+      slipokBranchId = slipokConfig.branchId
+      slipokApiKey = encryptionUtils.decrypt(slipokConfig.apiKey, config.ENCRYPTION_KEY)
+      slipokEnabled = true
+    }
+  }
 
   let slipokVerified = false
 
-  if (slipokConfig?.enabled && slipokConfig?.apiKey && slipokConfig?.branchId) {
+  if (slipokEnabled && slipokApiKey && slipokBranchId) {
     try {
-      const apiKey = encryptionUtils.decrypt(slipokConfig.apiKey, config.ENCRYPTION_KEY)
-      const apiUrl = `https://api.slipok.com/api/line/apikey/${slipokConfig.branchId}`
+      const apiUrl = `https://api.slipok.com/api/line/apikey/${slipokBranchId}`
       const totalAmount = bookings.reduce((sum, b) => sum + b.totalPrice, 0)
       const matches = slip.match(/^data:(image\/[\w+]+);base64,(.+)$/)
       if (!matches) {
@@ -74,7 +92,7 @@ const payBooking = async(
       }
       const mimeType = matches[1]
       const imageBuffer = Buffer.from(matches[2], 'base64')
-      const slipResult = await slipokUtils.verifySlip(imageBuffer, mimeType, totalAmount, { url: apiUrl, apiKey })
+      const slipResult = await slipokUtils.verifySlip(imageBuffer, mimeType, totalAmount, { url: apiUrl, apiKey: slipokApiKey })
       if (!slipResult.success) {
         res.status(422).json({
           message: slipResult.errorMessage,
