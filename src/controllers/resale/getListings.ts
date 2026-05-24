@@ -12,6 +12,10 @@ const getListings = async(req: Request, res: Response): Promise<void> => {
     }
 
     const booking = listing.bookingID as { courtID?: string; date?: Date }
+    if (booking?.date && booking.date < new Date()) {
+      return false
+    }
+
     if (typeof req.query.courtID === 'string' && booking?.courtID?.toString() !== req.query.courtID) {
       return false
     }
