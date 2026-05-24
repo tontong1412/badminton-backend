@@ -12,7 +12,7 @@ const getMyEvents =  async(
 
   const teams = await TeamModel.find({ players: user.playerID }).select('_id')
 
-  const teamIDs = teams.map((t:TeamDocument) => (t._id as string).toString())
+  const teamIDs = teams.map((t:TeamDocument) => t._id.toString())
 
   const myEventsTest = await EventModel.find({
     'tournament.id': new Types.ObjectId(tournamentID as string),

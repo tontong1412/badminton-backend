@@ -1,6 +1,5 @@
 import { Request, Response } from 'express'
 import { OAuth2Client } from 'google-auth-library'
-import { Types } from 'mongoose'
 import UserModel from '../../schema/user'
 import PlayerModel from '../../schema/player'
 import tokenUtils from '../../utils/token'
@@ -74,7 +73,7 @@ const googleLogin = async(
   }
 
   const userPayload: TokenPayload = {
-    id: user._id as Types.ObjectId,
+    id: user._id,
     email: user.email,
     playerID: user.playerID,
     role: user.role,
@@ -82,7 +81,7 @@ const googleLogin = async(
 
   const accessToken = tokenUtils.create(userPayload, config.ACCESS_SECRET, constants.TOKEN.EXPIRE_TIME.ACCESS)
   const refreshToken = tokenUtils.create(userPayload, config.REFRESH_SECRET, constants.TOKEN.EXPIRE_TIME.REFRESH)
-  await tokenUtils.storeRefreshToken(user._id as string, refreshToken)
+  await tokenUtils.storeRefreshToken(user._id.toString(), refreshToken)
 
   res.cookie('access', accessToken, {
     httpOnly: true,

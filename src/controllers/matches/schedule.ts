@@ -37,7 +37,7 @@ const scheduleMatches =  async(
   const operations = matches.map((update) => ({
     updateOne: {
       filter: { _id: update.id }, // Filter for the specific document
-      update: { $set: { date: update.date } } // Update with the specific value
+      update: { $set: { date: new Date(update.date) } } // Update with the specific value
     }
   }))
 

@@ -1,5 +1,4 @@
 import { Request, Response } from 'express'
-import { Types } from 'mongoose'
 import BookingModel from '../../schema/booking'
 import CourtModel from '../../schema/court'
 import VenueModel from '../../schema/venue'
@@ -75,7 +74,7 @@ const approvePayment = async(
     const currency = firstBooking.currency ?? ''
 
     const uniqueCourtIDs = [...new Set(bookings.map((b) => b.courtID.toString()))]
-    const otherCourtIDs = uniqueCourtIDs.filter((id) => id !== court.id.toString())
+    const otherCourtIDs = uniqueCourtIDs.filter((id) => id !== court._id.toString())
 
     // Parallelize user email lookup and remaining court name fetches
     const [booker, otherCourts] = await Promise.all([
@@ -89,8 +88,8 @@ const approvePayment = async(
 
     const userEmail = booker?.email
     const courtNameMap = new Map<string, typeof court.name>([
-      [court.id.toString(), court.name],
-      ...otherCourts.map((c) => [(c._id as Types.ObjectId).toString(), c.name] as [string, typeof court.name]),
+      [court._id.toString(), court.name],
+      ...otherCourts.map((c) => [(c._id).toString(), c.name] as [string, typeof court.name]),
     ])
 
     sendBookingConfirmationEmail({

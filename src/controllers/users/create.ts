@@ -3,7 +3,6 @@ import { Request, Response } from 'express'
 import { ErrorResponse, Login, LoginResponse, Player, TokenPayload } from '../../type'
 import UserModel from '../../schema/user'
 import PlayerModel from '../../schema/player'
-import { Types } from 'mongoose'
 import tokenUtils from '../../utils/token'
 import config from '../../config'
 import constants from '../../constants'
@@ -50,15 +49,15 @@ const createUser = async(
   await UserModel.findByIdAndUpdate(savedUser._id, { playerID: savedPlayer._id })
 
   const userPayload: TokenPayload =  {
-    id: savedUser._id as Types.ObjectId,
+    id: savedUser._id,
     email: savedUser.email,
-    playerID: savedPlayer._id as Types.ObjectId,
+    playerID: savedPlayer._id,
     role: savedUser.role,
   }
 
   const accessToken = tokenUtils.create(userPayload, config.ACCESS_SECRET, constants.TOKEN.EXPIRE_TIME.ACCESS)
   const refreshToken = tokenUtils.create(userPayload, config.REFRESH_SECRET, constants.TOKEN.EXPIRE_TIME.REFRESH)
-  await tokenUtils.storeRefreshToken(user._id as string, refreshToken)
+  await tokenUtils.storeRefreshToken(user._id.toString(), refreshToken)
 
   res.cookie('access', accessToken, {
     httpOnly: true,

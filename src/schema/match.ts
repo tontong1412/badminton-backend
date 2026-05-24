@@ -101,9 +101,10 @@ matchSchema.virtual('id').get(function(this: MatchDocument): string {
 
 matchSchema.set('toJSON', {
   virtuals: true,
-  transform: (_doc: Document, ret: Record<string, unknown>): void => {
-    delete ret._id
-    delete ret.__v
+  transform: (_doc, ret) => {
+    const record = ret as unknown as Record<string, unknown>
+    delete record._id
+    delete record.__v
   }
 })
 

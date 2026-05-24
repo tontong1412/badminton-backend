@@ -2,7 +2,6 @@ import { Request, Response } from 'express'
 import { ErrorResponse, Event, NewEvent, ResponseLocals } from '../../type'
 import eventService from '../../services/eventService'
 import TournamentModel from '../../schema/tournament'
-import { Types } from 'mongoose'
 
 
 const create =  async(
@@ -26,7 +25,7 @@ const create =  async(
   const eventPayload = {
     ...req.body,
     tournament: {
-      id: tournament._id as Types.ObjectId,
+      id: tournament._id,
       name: tournament.name,
       shuttlecockFee: tournament.shuttlecockFee,
       billingMethod: tournament.billingMethod,

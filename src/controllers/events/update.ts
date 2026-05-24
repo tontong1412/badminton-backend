@@ -1,7 +1,6 @@
 import { Request, Response } from 'express'
 import { ErrorResponse, Event, NewEvent, ResponseLocals } from '../../type'
 import TournamentModel from '../../schema/tournament'
-import { Types } from 'mongoose'
 import EventModel from '../../schema/event'
 
 const update =  async(
@@ -36,7 +35,7 @@ const update =  async(
   const updateParam = {
     ...req.body,
     tournament: {
-      id: tournament._id as Types.ObjectId,
+      id: tournament._id,
       name: tournament.name,
       shuttlecockFee: tournament.shuttlecockFee,
       billingMethod: tournament.billingMethod,

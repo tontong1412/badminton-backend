@@ -71,9 +71,10 @@ couponSchema.virtual('id').get(function(this: CouponDocument): string {
 
 couponSchema.set('toJSON', {
   virtuals: true,
-  transform: (_doc, ret: Record<string, unknown>) => {
-    delete ret._id
-    delete ret.__v
+  transform: (_doc, ret) => {
+    const record = ret as unknown as Record<string, unknown>
+    delete record._id
+    delete record.__v
   },
 })
 
