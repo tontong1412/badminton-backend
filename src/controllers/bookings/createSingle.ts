@@ -36,6 +36,7 @@ interface CreateSingleBookingPayload {
   note?: string;
   bookedAsAdmin?: boolean;
   couponCode?: string;
+  overridePrice?: number;
 }
 
 const createSingle = async(
@@ -43,7 +44,7 @@ const createSingle = async(
   res: Response,
 ): Promise<void> => {
   const currentUser = requestUserUtils.getOptionalUser(req)
-  const { slip, note, couponCode } = req.body
+  const { slip, note, couponCode, overridePrice } = req.body
 
   const bookingItems: CreateSingleBookingItem[] = req.body.items && req.body.items.length > 0
     ? req.body.items
@@ -184,6 +185,20 @@ const createSingle = async(
     inRequestByCourtDate.set(overlapKey, [...existingRanges, { startTime: item.startTime, endTime: item.endTime }])
   }
 
+  // If admin provided an override price, distribute it proportionally across segments
+  if (req.body.bookedAsAdmin && overridePrice !== undefined && overridePrice >= 0) {
+    const naturalTotal = draftBookings.reduce((s, b) => s + b.totalPrice, 0)
+    for (const booking of draftBookings) {
+      const share = naturalTotal > 0 ? booking.totalPrice / naturalTotal : 1 / draftBookings.length
+      booking.totalPrice = Number((overridePrice * share).toFixed(2))
+    }
+    // Fix rounding: assign remainder to last booking
+    const distributed = draftBookings.reduce((s, b) => s + b.totalPrice, 0)
+    draftBookings[draftBookings.length - 1].totalPrice = Number(
+      (draftBookings[draftBookings.length - 1].totalPrice + (overridePrice - distributed)).toFixed(2)
+    )
+  }
+
   const bookingBundleID = new Types.ObjectId()
   const bookingRef = generateBookingRef()
 
@@ -274,21 +289,23 @@ const createSingle = async(
   }
 
   // Send confirmation email (fire-and-forget — do not block response)
-  const totalPrice = savedBookings.reduce((sum, booking) => sum + booking.totalPrice, 0)
-  sendBookingConfirmationEmail({
-    bookings: savedBookings.map((b) => ({
-      ...b.toObject(),
-      courtName: courtNameMap.get(b.courtID.toString()),
-    })),
-    bookingBundleID: bookingBundleID.toString(),
-    bookingRef,
-    guestEmail: req.body.guestEmail || undefined,
-    guestName: req.body.guestName || undefined,
-    userEmail: currentUser?.email || undefined,
-    venueName: firstVenueName,
-    totalPrice,
-    currency: savedBookings[0]?.currency ?? '',
-  }).catch((err) => console.error('Failed to send booking confirmation email:', err))
+  if (!req.body.bookedAsAdmin) {
+    const totalPrice = savedBookings.reduce((sum, booking) => sum + booking.totalPrice, 0)
+    sendBookingConfirmationEmail({
+      bookings: savedBookings.map((b) => ({
+        ...b.toObject(),
+        courtName: courtNameMap.get(b.courtID.toString()),
+      })),
+      bookingBundleID: bookingBundleID.toString(),
+      bookingRef,
+      guestEmail: req.body.guestEmail || undefined,
+      guestName: req.body.guestName || undefined,
+      userEmail: currentUser?.email || undefined,
+      venueName: firstVenueName,
+      totalPrice,
+      currency: savedBookings[0]?.currency ?? '',
+    }).catch((err) => console.error('Failed to send booking confirmation email:', err))
+  }
 }
 
 export default createSingle
