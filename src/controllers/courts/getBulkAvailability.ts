@@ -2,9 +2,10 @@ import { Request, Response } from 'express'
 import { Types } from 'mongoose'
 import BookingModel from '../../schema/booking'
 import CourtModel from '../../schema/court'
-import VenueModel from '../../schema/venue'
+import VenueModel, { VenueDocument } from '../../schema/venue'
 import bookingUtils from '../../utils/booking'
 import { BookingStatus, GapPolicy } from '../../type'
+import { getCachedVenue, setCachedVenue, getCachedCourts, setCachedCourts, CourtLean } from '../../utils/venueCache'
 
 // Pure in-memory check — no DB queries
 const checkSlotInMemory = (
@@ -93,21 +94,42 @@ const getBulkAvailability = async(req: Request, res: Response): Promise<void> =>
 
   const courtObjectIds = courtIds.map((id) => new Types.ObjectId(id))
 
-  // 1 round trip: courts, bookings, and venue all in parallel — 3 queries total
+  // Venue and courts are cached — only bookings need a DB round trip on warm cache
+  const cachedVenue = getCachedVenue(venueId)
+  const cachedCourts = getCachedCourts(venueId)
+
   const t0 = performance.now()
-  const [courtsArray, allBookings, venue] = await Promise.all([
-    CourtModel.find({ venueID: new Types.ObjectId(venueId), _id: { $in: courtObjectIds } }).lean(),
+  const [fetchedCourtsRaw, allBookings, fetchedVenue] = await Promise.all([
+    cachedCourts ? Promise.resolve(null) : CourtModel.find({ venueID: new Types.ObjectId(venueId), _id: { $in: courtObjectIds } }).lean(),
     BookingModel.find({
       courtID: { $in: courtObjectIds },
       date: normalizedDate,
       status: { $in: [BookingStatus.Pending, BookingStatus.Confirmed] },
     }).select({ courtID: 1, startTime: 1, endTime: 1 }).lean(),
-    VenueModel.findById(venueId),
+    cachedVenue ? Promise.resolve(null) : VenueModel.findById(venueId),
   ])
-  console.log(`[bulk-avail] courts+bookings+venue query: ${(performance.now() - t0).toFixed(1)}ms`)
+  const logParts = ['bookings', ...(fetchedCourtsRaw ? ['courts'] : []), ...(fetchedVenue ? ['venue'] : [])]
+  console.log(`[bulk-avail] ${logParts.join('+')} query: ${(performance.now() - t0).toFixed(1)}ms`)
 
-  // Index courts by id for O(1) lookup when building results
-  const courtsById = new Map(courtsArray.map((c) => [(c._id as Types.ObjectId).toHexString(), c]))
+  const venue: VenueDocument | null = cachedVenue ?? (fetchedVenue as VenueDocument | null)
+  if (fetchedVenue) setCachedVenue(venueId, fetchedVenue as VenueDocument)
+
+  // Build courtsById map — keyed by courtId string for O(1) lookup
+  const courtsById = new Map<string, Record<string, unknown>>()
+  if (cachedCourts) {
+    for (const courtId of courtIds) {
+      const c = cachedCourts.get(courtId)
+      if (c) courtsById.set(courtId, c)
+    }
+  } else if (fetchedCourtsRaw) {
+    for (const c of fetchedCourtsRaw as unknown as CourtLean[]) {
+      courtsById.set(c._id.toHexString(), c as Record<string, unknown>)
+    }
+    // Cache all venue courts in background for future requests
+    CourtModel.find({ venueID: new Types.ObjectId(venueId) }).lean()
+      .then((all) => setCachedCourts(venueId, all as unknown as CourtLean[]))
+      .catch(() => { /* best-effort */ })
+  }
 
   if (!venue) {
     res.status(404).json({ message: 'Venue not found' })

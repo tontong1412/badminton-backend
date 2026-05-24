@@ -1,6 +1,7 @@
 import { Request, Response } from 'express'
 import CourtModel from '../../schema/court'
 import VenueModel from '../../schema/venue'
+import { invalidateCachedCourts } from '../../utils/venueCache'
 
 interface CreateCourtPayload {
   venueID: string;
@@ -24,6 +25,7 @@ const create = async(
 
   const court = new CourtModel(req.body)
   const savedCourt = await court.save()
+  invalidateCachedCourts(req.body.venueID)
   res.status(201).json(savedCourt)
 }
 

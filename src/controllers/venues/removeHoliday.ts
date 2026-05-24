@@ -1,6 +1,7 @@
 import { Request, Response } from 'express'
 import bookingUtils from '../../utils/booking'
 import VenueModel from '../../schema/venue'
+import { invalidateCachedVenue } from '../../utils/venueCache'
 
 const removeHoliday = async(req: Request<{ id: string; date: string }>, res: Response): Promise<void> => {
   const venue = await VenueModel.findById(req.params.id)
@@ -16,6 +17,7 @@ const removeHoliday = async(req: Request<{ id: string; date: string }>, res: Res
   )
   await venue.save()
 
+  invalidateCachedVenue(req.params.id)
   res.json(venue)
 }
 

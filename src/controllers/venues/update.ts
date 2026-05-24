@@ -3,6 +3,7 @@ import VenueModel from '../../schema/venue'
 import encryptionUtils from '../../utils/encryption'
 import config from '../../config'
 import { UserRole } from '../../type'
+import { invalidateCachedVenue } from '../../utils/venueCache'
 
 const update = async(req: Request<{ id: string }>, res: Response): Promise<void> => {
   const payload = { ...req.body } as Record<string, unknown>
@@ -49,6 +50,7 @@ const update = async(req: Request<{ id: string }>, res: Response): Promise<void>
     return
   }
 
+  invalidateCachedVenue(req.params.id)
   res.json(venue)
 }
 

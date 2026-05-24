@@ -1,5 +1,6 @@
 import { Request, Response } from 'express'
 import VenueModel from '../../schema/venue'
+import { invalidateCachedVenue } from '../../utils/venueCache'
 
 interface SchedulePayload {
   weeklySchedule?: Record<string, { open: string; close: string } | null>;
@@ -29,6 +30,7 @@ const setSchedule = async(
     return
   }
 
+  invalidateCachedVenue(req.params.id)
   res.json(venue)
 }
 
