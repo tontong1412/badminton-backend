@@ -129,6 +129,7 @@ bookingSchema.set('toJSON', {
 })
 
 bookingSchema.index({ courtID: 1, date: 1, startTime: 1, endTime: 1 })
+bookingSchema.index({ courtID: 1, date: 1, status: 1 })
 
 const BookingModel = mongoose.model<BookingDocument>('Booking', bookingSchema)
 
