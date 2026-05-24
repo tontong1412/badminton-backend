@@ -31,7 +31,7 @@ const EMAIL = {
 }
 
 const CLIENT = {
-  URL: process.env.CLIENT_URL
+  URL: process.env.CLIENT_URL?.trim()
 }
 
 export default {
