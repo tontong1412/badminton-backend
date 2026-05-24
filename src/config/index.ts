@@ -15,6 +15,16 @@ const NODE_ENV = process.env.NODE_ENV || 'development'
 const CLOUDINARY_URL = process.env.CLOUDINARY_URL || null
 const CLOUDINARY_PREFIX = process.env.CLOUDINARY_PREFIX || 'local-new'
 
+const ENCRYPTION_KEY = process.env.ENCRYPTION_KEY || 'change-this-in-production-32chars'
+
+const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID || null
+
+const SYSTEM_SLIPOK = {
+  BRANCH_ID: process.env.SYSTEM_SLIPOK_BRANCH_ID || null,
+  API_KEY: process.env.SYSTEM_SLIPOK_API_KEY || null,
+  ENABLED: process.env.SYSTEM_SLIPOK_ENABLED === 'true',
+}
+
 const EMAIL = {
   USER: process.env.EMAIL,
   PASSWORD: process.env.EMAIL_PASSWORD
@@ -33,5 +43,8 @@ export default {
   EMAIL,
   CLIENT,
   CLOUDINARY_PREFIX,
-  CLOUDINARY_URL
+  CLOUDINARY_URL,
+  ENCRYPTION_KEY,
+  GOOGLE_CLIENT_ID,
+  SYSTEM_SLIPOK,
 }

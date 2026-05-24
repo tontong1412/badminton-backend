@@ -3,7 +3,6 @@ import {  ErrorResponse, ResponseLocals, Tournament } from '../../type'
 import PlayerModel from '../../schema/player'
 import TournamentModel from '../../schema/tournament'
 import EventModel from '../../schema/event'
-import { Types } from 'mongoose'
 
 interface AddManagerBody {
   playerID: string
@@ -53,7 +52,7 @@ const addManager =  async(
     'tournament.id': updateResponse._id
   }, {
     tournament: {
-      id: updateResponse._id as Types.ObjectId,
+      id: updateResponse._id,
       name: updateResponse.name,
       shuttlecockFee: updateResponse.shuttlecockFee,
       billingMethod: updateResponse.billingMethod,

@@ -1,7 +1,9 @@
 import { NextFunction, Request, Response } from 'express'
-import { RequestWithCookies } from '../type'
+import { Types } from 'mongoose'
+import { RequestWithCookies, TokenPayload, UserRole } from '../type'
 import tokenUtils from '../utils/token'
 import config from '../config'
+import VenueModel from '../schema/venue'
 
 const errorHandler = (
   error: unknown,
@@ -46,7 +48,62 @@ const auth = (req: RequestWithCookies, res: Response, next: NextFunction) => {
   return
 }
 
+const adminAuth = (req: RequestWithCookies, res: Response, next: NextFunction) => {
+  auth(req, res, () => {
+    if ((res.locals.user as TokenPayload).role !== UserRole.Admin) {
+      res.status(403).send('Forbidden')
+      return
+    }
+
+    next()
+  })
+}
+
+/**
+ * Allows system admins, venue owners, and venue managers.
+ * Requires :id param to be the venue ID.
+ */
+const venueManagerAuth = (req: RequestWithCookies & Request<{ id: string }>, res: Response, next: NextFunction) => {
+  // eslint-disable-next-line @typescript-eslint/no-misused-promises
+  auth(req, res, async() => {
+    try {
+      const user = res.locals.user as { id: string; role: UserRole }
+
+      // System admins always pass
+      if (user.role === UserRole.Admin) {
+        next()
+        return
+      }
+
+      if (!Types.ObjectId.isValid(req.params.id)) {
+        res.status(400).json({ error: 'Invalid venue ID' })
+        return
+      }
+
+      const venue = await VenueModel.findById(req.params.id).select('ownerUserID managerUserIDs')
+      if (!venue) {
+        res.status(404).json({ message: 'Venue not found' })
+        return
+      }
+
+      const isOwner = venue.ownerUserID.toString() === user.id.toString()
+      const isManager = venue.managerUserIDs.some((id) => id.toString() === user.id.toString())
+
+      if (!isOwner && !isManager) {
+        res.status(403).send('Forbidden')
+        return
+      }
+
+      next()
+    } catch (err) {
+      next(err)
+    }
+  })
+}
+
 export default {
   errorHandler,
-  auth
+  auth,
+  adminAuth,
+  venueManagerAuth,
 }

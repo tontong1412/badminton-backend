@@ -12,7 +12,7 @@ const getMyMatches =  async(
 
   const teams = await TeamModel.find({ players: user.playerID }).select('_id')
 
-  const teamIDs = teams.map((t:TeamDocument) => (t._id as string).toString())
+  const teamIDs = teams.map((t:TeamDocument) => t._id.toString())
 
   const tournament = await TournamentModel.findById(tournamentID).select('events')
   if(!tournament){

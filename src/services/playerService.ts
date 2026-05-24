@@ -29,7 +29,7 @@ const createPlayer = async(playerObject: NewPlayer): Promise<NonSensitivePlayer>
     const savedPlayer = await newPlayer.save()
 
     if(photo){
-      const uploadResult = await mediaUtils.uploadPhoto(photo, `${config.CLOUDINARY_PREFIX}players`, savedPlayer._id as string)
+      const uploadResult = await mediaUtils.uploadPhoto(photo, `${config.CLOUDINARY_PREFIX}players`, savedPlayer._id.toString())
       const url = mediaUtils.getOptimizedUrl(uploadResult.public_id, uploadResult.version)
       const updatedPlayer = await PlayerModel.findByIdAndUpdate(savedPlayer._id, { photo: url }, { new:true })
       savedPlayer.photo = updatedPlayer?.photo

@@ -4,6 +4,7 @@ import forgotPassword from './forgotPassword'
 import resetPassword from './resetPassword'
 import refresh from './refresh'
 import logout from './logout'
+import googleLogin from './googleLogin'
 import controllerErrorHandler from '../../utils/controllerErrorHandler'
 
 export default {
@@ -13,4 +14,5 @@ export default {
   resetPassword: controllerErrorHandler(resetPassword),
   refresh: controllerErrorHandler(refresh),
   logout: controllerErrorHandler(logout),
+  googleLogin: controllerErrorHandler(googleLogin),
 }

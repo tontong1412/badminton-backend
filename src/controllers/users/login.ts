@@ -5,7 +5,6 @@ import { Request, Response } from 'express'
 import config from '../../config'
 import tokenUtils from '../../utils/token'
 import constants from '../../constants'
-import { Types } from 'mongoose'
 import PlayerModel from '../../schema/player'
 
 const login = async(
@@ -26,13 +25,14 @@ const login = async(
   }
 
   const userPayload: TokenPayload = {
-    id: user._id as Types.ObjectId,
+    id: user._id,
     email: user.email,
-    playerID: user.playerID
+    playerID: user.playerID,
+    role: user.role,
   }
   const accessToken = tokenUtils.create(userPayload, config.ACCESS_SECRET, constants.TOKEN.EXPIRE_TIME.ACCESS)
   const refreshToken = tokenUtils.create(userPayload, config.REFRESH_SECRET, constants.TOKEN.EXPIRE_TIME.REFRESH)
-  await tokenUtils.storeRefreshToken(user._id as string, refreshToken)
+  await tokenUtils.storeRefreshToken(user._id.toString(), refreshToken)
 
   res.cookie('access', accessToken, {
     httpOnly: true,

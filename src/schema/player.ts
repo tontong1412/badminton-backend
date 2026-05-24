@@ -32,6 +32,12 @@ const playerSchema = new Schema<PlayerDocument>({
     whatsapp: { type: String, trim: true },
     email: { type: String, trim: true },
   },
+  paymentInfo: {
+    bankName: { type: String, trim: true },
+    accountName: { type: String, trim: true },
+    accountNumber: { type: String, trim: true },
+    promptPayID: { type: String, trim: true },
+  },
   userID: { type: Schema.Types.ObjectId, ref: constants.DATABASE.COLLECTION.USER },
 }, {
   timestamps: { createdAt: true, updatedAt: true }
@@ -46,9 +52,10 @@ playerSchema.virtual('id').get(function(this: PlayerDocument): string {
 
 playerSchema.set('toJSON', {
   virtuals: true,
-  transform: (_doc: Document, ret: Record<string, unknown>): void => {
-    delete ret._id
-    delete ret.__v
+  transform: (_doc, ret) => {
+    const record = ret as unknown as Record<string, unknown>
+    delete record._id
+    delete record.__v
   }
 })
 

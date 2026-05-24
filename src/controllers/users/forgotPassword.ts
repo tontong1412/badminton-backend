@@ -5,7 +5,6 @@ import sendEmail from '../../utils/sendEmail'
 import { MailContent, TokenPayload } from '../../type'
 import config from '../../config'
 import constants from '../../constants'
-import { Types } from 'mongoose'
 
 const forgotPassword = async(
   req: Request<unknown, unknown, {email: string}, unknown>,
@@ -19,9 +18,10 @@ const forgotPassword = async(
   }
 
   const userPayload: TokenPayload = {
-    id: user._id as Types.ObjectId,
+    id: user._id,
     email: user.email,
-    playerID: user.playerID
+    playerID: user.playerID,
+    role: user.role,
   }
 
   const token = tokenUtils.create(userPayload, config.ACCESS_SECRET, constants.TOKEN.EXPIRE_TIME.ACCESS)
