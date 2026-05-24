@@ -5,6 +5,7 @@ import getAdminPayouts from './getAdminPayouts'
 import getListingById from './getListingById'
 import getListings from './getListings'
 import markSellerPaid from './markSellerPaid'
+import payoutWithSlip from './payoutWithSlip'
 import purchaseListing from './purchaseListing'
 
 export default {
@@ -14,5 +15,6 @@ export default {
   getListingById: controllerErrorHandler(getListingById),
   purchaseListing: controllerErrorHandler(purchaseListing),
   markSellerPaid: controllerErrorHandler(markSellerPaid),
+  payoutWithSlip: controllerErrorHandler(payoutWithSlip),
   cancelListing: controllerErrorHandler(cancelListing),
 }

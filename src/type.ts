@@ -97,6 +97,12 @@ export interface MailContent {
   subject: string;
   text: string;
   html?: string;
+  attachments?: Array<{
+    filename: string;
+    content: string;    // base64
+    encoding: 'base64';
+    contentType: string;
+  }>;
 }
 
 export interface MailOptions extends MailContent {
