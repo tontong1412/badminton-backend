@@ -38,6 +38,7 @@ const getAdminPayouts = async(_req: Request, res: Response<unknown, ResponseLoca
     json.sellerName = player?.displayName?.en || player?.displayName?.th
       || player?.officialName?.en || player?.officialName?.th || undefined
     json.sellerPhone = player?.contact?.tel || undefined
+    json.sellerPaymentInfo = player?.paymentInfo ?? undefined
 
     if (booking) {
       json.bookingDate = booking.date
