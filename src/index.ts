@@ -20,6 +20,7 @@ import tournamentRouter from './routes/tournaments'
 import eventRouter from './routes/events'
 import venueRouter from './routes/venues'
 import couponRouter from './routes/coupons'
+import bannerRouter from './routes/banners'
 import config from './config'
 import './utils/database'
 import { startBookingExpiryJob } from './utils/bookingExpiry'
@@ -62,7 +63,7 @@ app.use('/matches', matchRouter)
 app.use('/users', userRouter)
 app.use('/tournaments', tournamentRouter)
 app.use('/events', eventRouter)
-
+app.use('/banners', bannerRouter)
 
 
 app.use(middlewares.errorHandler)
