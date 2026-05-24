@@ -28,13 +28,13 @@ const approvePayment = async(
 
   // Verify the current user owns the venue these courts belong to
   const courtID = bookings[0].courtID
-  const court = await CourtModel.findById(courtID)
+  const court = await CourtModel.findById(courtID).select('venueID name')
   if (!court) {
     res.status(404).json({ message: 'Court not found' })
     return
   }
 
-  const venue = await VenueModel.findById(court.venueID)
+  const venue = await VenueModel.findById(court.venueID).select('ownerUserID managerUserIDs name')
   if (!venue) {
     res.status(404).json({ message: 'Venue not found' })
     return
@@ -57,29 +57,44 @@ const approvePayment = async(
     { paymentStatus: PaymentStatus.Paid, status: BookingStatus.Confirmed },
   )
 
-  const updatedBookings = await BookingModel.find({ bookingBundleID })
-  res.json({ message: 'Payment approved', bookings: updatedBookings })
+  // Update in-memory instead of re-querying
+  bookings.forEach((b) => {
+    b.paymentStatus = PaymentStatus.Paid
+    b.status = BookingStatus.Confirmed
+  })
+
+  res.json({ message: 'Payment approved', bookings })
 
   // Send payment approved email (fire-and-forget)
-  const firstBooking = updatedBookings[0]
+  const firstBooking = bookings[0]
   if (firstBooking) {
     const guestEmail = firstBooking.guestEmail
-    let userEmail: string | undefined
-    if (!guestEmail && firstBooking.userID) {
-      const booker = await UserModel.findById(firstBooking.userID).lean()
-      userEmail = booker?.email
-    }
     const venueName = venue.name?.en || venue.name?.th || ''
     const bookingRef = firstBooking.bookingRef ?? ''
-    const totalPrice = updatedBookings.reduce((sum, b) => sum + b.totalPrice, 0)
+    const totalPrice = bookings.reduce((sum, b) => sum + b.totalPrice, 0)
     const currency = firstBooking.currency ?? ''
 
-    const uniqueCourtIDs = [...new Set(updatedBookings.map((b) => b.courtID.toString()))]
-    const courts = await CourtModel.find({ _id: { $in: uniqueCourtIDs } }).lean()
-    const courtNameMap = new Map(courts.map((c) => [(c._id as Types.ObjectId).toString(), c.name]))
+    const uniqueCourtIDs = [...new Set(bookings.map((b) => b.courtID.toString()))]
+    const otherCourtIDs = uniqueCourtIDs.filter((id) => id !== court.id.toString())
+
+    // Parallelize user email lookup and remaining court name fetches
+    const [booker, otherCourts] = await Promise.all([
+      !guestEmail && firstBooking.userID
+        ? UserModel.findById(firstBooking.userID, { email: 1 }).lean()
+        : Promise.resolve(null),
+      otherCourtIDs.length > 0
+        ? CourtModel.find({ _id: { $in: otherCourtIDs } }, { name: 1 }).lean()
+        : Promise.resolve([]),
+    ])
+
+    const userEmail = booker?.email
+    const courtNameMap = new Map<string, typeof court.name>([
+      [court.id.toString(), court.name],
+      ...otherCourts.map((c) => [(c._id as Types.ObjectId).toString(), c.name] as [string, typeof court.name]),
+    ])
 
     sendBookingConfirmationEmail({
-      bookings: updatedBookings.map((b) => ({
+      bookings: bookings.map((b) => ({
         ...b.toObject(),
         courtName: courtNameMap.get(b.courtID.toString()),
       })),
