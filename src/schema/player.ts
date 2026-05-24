@@ -32,6 +32,12 @@ const playerSchema = new Schema<PlayerDocument>({
     whatsapp: { type: String, trim: true },
     email: { type: String, trim: true },
   },
+  paymentInfo: {
+    bankName: { type: String, trim: true },
+    accountName: { type: String, trim: true },
+    accountNumber: { type: String, trim: true },
+    promptPayID: { type: String, trim: true },
+  },
   userID: { type: Schema.Types.ObjectId, ref: constants.DATABASE.COLLECTION.USER },
 }, {
   timestamps: { createdAt: true, updatedAt: true }

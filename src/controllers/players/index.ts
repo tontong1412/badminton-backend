@@ -3,6 +3,7 @@ import createPlayer from './createPlayer'
 import getNonSensitivePlayerById from './getNonSensitivePlayerById'
 import claimPlayer from './claimPlayer'
 import updatePlayer from './updatePlayer'
+import getMyPlayer from './getMyPlayer'
 import getPlayerHistory from './getHistory'
 import getPlayersWithAccount from './getPlayersWithAccount'
 import controllerErrorHandler from '../../utils/controllerErrorHandler'
@@ -13,6 +14,7 @@ export default {
   getNonSensitivePlayerById: controllerErrorHandler(getNonSensitivePlayerById),
   claimPlayer: controllerErrorHandler(claimPlayer),
   updatePlayer: controllerErrorHandler(updatePlayer),
+  getMyPlayer: controllerErrorHandler(getMyPlayer),
   getPlayerHistory: controllerErrorHandler(getPlayerHistory),
   getPlayersWithAccount: controllerErrorHandler(getPlayersWithAccount),
 }

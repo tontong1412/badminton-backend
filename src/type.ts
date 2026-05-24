@@ -36,6 +36,12 @@ export interface Player {
     whatsapp?: string;
     email?: string;
   }
+  paymentInfo?: {
+    bankName?: string;
+    accountName?: string;
+    accountNumber?: string;
+    promptPayID?: string;
+  }
 }
 
 export type NewPlayer = Omit<Player, 'id'>;
