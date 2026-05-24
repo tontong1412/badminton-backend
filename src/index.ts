@@ -28,6 +28,18 @@ app.use(express.json({ limit: '2mb' }))
 app.use(express.urlencoded({ limit: '2mb', extended: true }))
 app.use(cookieParser())
 
+// ── Request timing (dev) ──────────────────────────────────────────────────────
+if (config.NODE_ENV !== 'production') {
+  app.use((req, _res, next) => {
+    const start = performance.now()
+    _res.on('finish', () => {
+      const ms = (performance.now() - start).toFixed(1)
+      console.log(`[${ms}ms] ${req.method} ${req.path}`)
+    })
+    next()
+  })
+}
+
 app.get('/ping', (_req, res) => {
   console.log('someone pinged here')
   res.send('pong')

@@ -2,7 +2,7 @@ import { Request, Response } from 'express'
 import { Types } from 'mongoose'
 import BookingModel from '../../schema/booking'
 import CourtModel from '../../schema/court'
-import VenueModel, { VenueDocument } from '../../schema/venue'
+import VenueModel from '../../schema/venue'
 import bookingUtils from '../../utils/booking'
 import { BookingStatus, GapPolicy } from '../../type'
 
@@ -57,6 +57,7 @@ const validateGapInMemory = (
 const getBulkAvailability = async(req: Request, res: Response): Promise<void> => {
   const date = typeof req.query.date === 'string' ? req.query.date : null
   const courtIdsParam = typeof req.query.courtIds === 'string' ? req.query.courtIds : null
+  const venueId = typeof req.query.venueId === 'string' ? req.query.venueId : null
   const requestedDuration = typeof req.query.durationMinutes === 'string'
     ? Number(req.query.durationMinutes)
     : bookingUtils.SLOT_DURATION_MINUTES
@@ -71,6 +72,11 @@ const getBulkAvailability = async(req: Request, res: Response): Promise<void> =>
     return
   }
 
+  if (!venueId) {
+    res.status(400).json({ message: 'venueId query is required' })
+    return
+  }
+
   if (
     Number.isNaN(requestedDuration)
     || requestedDuration < bookingUtils.SLOT_DURATION_MINUTES
@@ -82,18 +88,31 @@ const getBulkAvailability = async(req: Request, res: Response): Promise<void> =>
 
   const courtIds = courtIdsParam.split(',').map((id) => id.trim()).filter(Boolean)
 
-  // 1) Fetch courts, venues, and ALL bookings for all courts on this date — 3 queries total
   const normalizedDate = new Date(date)
   normalizedDate.setHours(0, 0, 0, 0)
 
-  const [courts, allBookings] = await Promise.all([
-    Promise.all(courtIds.map((id) => CourtModel.findById(id))),
+  const courtObjectIds = courtIds.map((id) => new Types.ObjectId(id))
+
+  // 1 round trip: courts, bookings, and venue all in parallel — 3 queries total
+  const t0 = performance.now()
+  const [courtsArray, allBookings, venue] = await Promise.all([
+    CourtModel.find({ venueID: new Types.ObjectId(venueId), _id: { $in: courtObjectIds } }).lean(),
     BookingModel.find({
-      courtID: { $in: courtIds.map((id) => new Types.ObjectId(id)) },
+      courtID: { $in: courtObjectIds },
       date: normalizedDate,
       status: { $in: [BookingStatus.Pending, BookingStatus.Confirmed] },
     }).select({ courtID: 1, startTime: 1, endTime: 1 }).lean(),
+    VenueModel.findById(venueId),
   ])
+  console.log(`[bulk-avail] courts+bookings+venue query: ${(performance.now() - t0).toFixed(1)}ms`)
+
+  // Index courts by id for O(1) lookup when building results
+  const courtsById = new Map(courtsArray.map((c) => [(c._id as Types.ObjectId).toHexString(), c]))
+
+  if (!venue) {
+    res.status(404).json({ message: 'Venue not found' })
+    return
+  }
 
   // Group bookings by courtID string for O(1) lookup
   const bookingsByCourt = new Map<string, { startTime: string; endTime: string }[]>()
@@ -103,33 +122,22 @@ const getBulkAvailability = async(req: Request, res: Response): Promise<void> =>
     bookingsByCourt.get(cid)!.push({ startTime: booking.startTime, endTime: booking.endTime })
   }
 
-  // 2) Fetch each unique venue once
-  const venueIdSet = new Set(courts.flatMap((c) => (c ? [String(c.venueID)] : [])))
-  const venueMap = new Map<string, VenueDocument | null>()
-  await Promise.all(
-    Array.from(venueIdSet).map(async(vid) => {
-      venueMap.set(vid, await VenueModel.findById(vid))
-    })
-  )
+  const schedule = bookingUtils.getVenueScheduleForDate(venue.toJSON() as never, date)
+  const stepMinutes = venue.slotDurationMinutes ?? bookingUtils.SLOT_DURATION_MINUTES
 
-  // 3) Compute availability entirely in memory — zero additional DB queries
-  const results = courtIds.map((courtId, idx) => {
-    const court = courts[idx]
+  // Compute availability entirely in memory — zero additional DB queries
+  const results = courtIds.map((courtId) => {
+    const court = courtsById.get(courtId)
     if (!court) return { courtId, result: null }
 
-    const venue = venueMap.get(String(court.venueID))
-    if (!venue) return { courtId, result: null }
-
-    const schedule = bookingUtils.getVenueScheduleForDate(venue.toJSON() as never, date)
     if (!schedule) {
       return { courtId, result: { date, durationMinutes: requestedDuration, court, isClosed: true, slots: [] } }
     }
 
     const courtBookings = bookingsByCourt.get(courtId) ?? []
-    const stepMinutes = venue.slotDurationMinutes ?? bookingUtils.SLOT_DURATION_MINUTES
     const effectiveClose = bookingUtils.addMinutes(schedule.close, -(requestedDuration - stepMinutes))
     const startSlots = bookingUtils.generateSlots(
-      schedule.open, effectiveClose, stepMinutes, Number(court.get('slotStartOffsetMinutes') ?? 0),
+      schedule.open, effectiveClose, stepMinutes, Number(court.slotStartOffsetMinutes ?? 0),
     )
 
     const slots = startSlots.map((startTime) => {
