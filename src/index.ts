@@ -1,3 +1,9 @@
+// Suppress DEP0169: url.parse() is called internally by 'parseurl' (used by Express)
+// and 'cloudinary' — both are unmaintained dependencies with no available fix.
+process.on('warning', (warning) => {
+  if ((warning as NodeJS.ErrnoException).code !== 'DEP0169') console.warn(warning)
+})
+
 import express from 'express'
 import cors from 'cors'
 import cookieParser from 'cookie-parser'
