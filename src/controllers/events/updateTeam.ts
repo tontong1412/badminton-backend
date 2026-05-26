@@ -26,6 +26,27 @@ const updateTeam = async(
     body.value = slipUrl.url
   }
 
+  if(body.field === 'teamName'){
+    const playerClubs = body.value as { id: string; club: string }[]
+    const event = await EventModel.findOne({ _id: body.eventID, 'teams.id': body.teamID })
+    if(!event) {
+      res.status(404).send({ message: 'Event not found' })
+      return
+    }
+    const team = event.teams.find(t => t.id.toString() === body.teamID)
+    if(!team) {
+      res.status(404).send({ message: 'Team not found' })
+      return
+    }
+    for(const pc of playerClubs){
+      const player = team.players.find(p => p.id.toString() === pc.id)
+      if(player) player.club = pc.club
+    }
+    const updatedEvent = await event.save()
+    res.send(updatedEvent as Event)
+    return
+  }
+
   let updateObj = {
     [`teams.$.${body.field}`]: body.value
   }
