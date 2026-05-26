@@ -33,13 +33,13 @@ const updateTeam = async(
       res.status(404).send({ message: 'Event not found' })
       return
     }
-    const team = event.teams.find(t => t.id.toString() === body.teamID)
+    const team = event.teams.find((t) => t.id.toString() === body.teamID)
     if(!team) {
       res.status(404).send({ message: 'Team not found' })
       return
     }
     for(const pc of playerClubs){
-      const player = team.players.find(p => p.id.toString() === pc.id)
+      const player = team.players.find((p) => p.id.toString() === pc.id)
       if(player) player.club = pc.club
     }
     const updatedEvent = await event.save()
