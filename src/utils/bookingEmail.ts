@@ -154,7 +154,7 @@ const sendBookingConfirmationEmail = async(opts: BookingEmailOptions): Promise<v
 
   const subject = isApproval
     ? `Payment Approved – #${bookingRef} at ${venueName}`
-    : `Booking Confirmed – #${bookingRef} at ${venueName}`
+    : `Payment Information – #${bookingRef} at ${venueName}`
 
   await sendEmail({
     to: toEmail,
