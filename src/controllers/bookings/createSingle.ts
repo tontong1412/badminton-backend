@@ -267,7 +267,7 @@ const createSingle = async(
     guestPhone: req.body.guestPhone || undefined,
     guestEmail: req.body.guestEmail || undefined,
     bookingType: BookingType.Single,
-    status: BookingStatus.Pending,
+    status: req.body.bookedAsAdmin ? BookingStatus.Confirmed : BookingStatus.Pending,
     paymentStatus: slip ? PaymentStatus.Pending : PaymentStatus.Unpaid,
     slip,
     slipTimestamp: slip ? new Date() : undefined,
