@@ -5,33 +5,34 @@ const getClubKey = (team: Team): string => {
   return clubs.length > 0 ? clubs.join('+') : '__no_club__'
 }
 
-/**
- * Arranges teams so same-club teams are spread as far apart as possible.
- * Uses round-robin interleaving across clubs, with largest clubs first.
- */
-const separateByClub = (teams: Team[]): Team[] => {
+/** Splits a team list into those that need club separation (club has 2+ entries) and free ones. */
+const splitByConflict = (teams: Team[]): { conflicting: Map<string, Team[]>; free: Team[] } => {
   const clubMap = new Map<string, Team[]>()
   for (const team of teams) {
     const key = getClubKey(team)
     if (!clubMap.has(key)) clubMap.set(key, [])
     clubMap.get(key)!.push(team)
   }
-  const groups = [...clubMap.values()].map((g) => shuffle(g))
-  groups.sort((a, b) => b.length - a.length)
-
-  const result: Team[] = []
-  while (groups.some((g) => g.length > 0)) {
-    for (const g of groups) {
-      if (g.length > 0) result.push(g.shift()!)
+  const conflicting = new Map<string, Team[]>()
+  const free: Team[] = []
+  for (const [key, clubTeams] of clubMap) {
+    if (key !== '__no_club__' && clubTeams.length >= 2) {
+      conflicting.set(key, clubTeams)
+    } else {
+      free.push(...clubTeams)
     }
   }
-  return result
+  return { conflicting, free }
 }
 
 /**
+ * Arranges multi-member-club teams so same-club teams are spread as far apart as possible,
+ * then appends single-member and no-club teams in random order.
+ */
+/**
  * Fills remaining null slots in the bracket draw with club separation.
- * Teams at consecutive positions in the club-spread list (i.e., from different clubs)
- * are paired together in first-round matchups.
+ * Multi-member-club teams are paired so no two from the same club meet in R1.
+ * Teams with no club conflict are placed randomly in remaining slots.
  * Best-effort: if one club has more than half the remaining teams, some same-club
  * first-round matchups may still occur.
  */
@@ -57,23 +58,78 @@ const fillBracketWithClubSeparation = (
     else singleSlots.push(...slots)
   }
 
-  // Shuffle the pair order so club placement is randomised across the bracket
-  const shuffledPairs = shuffle(fullPairs)
-  const separated = separateByClub(teams)
+  const { conflicting, free } = splitByConflict(teams)
 
-  // Teams for full pairs: pairs of consecutive items from the spread list.
-  // Adjacent items in separateByClub output are from different clubs, so
-  // index 2i → slot 0 of pair i, index 2i+1 → slot 1 of pair i.
-  for (let i = 0; i < shuffledPairs.length; i++) {
-    const [pos0, pos1] = shuffledPairs[i]
-    if (2 * i < separated.length) draw[pos0] = separated[2 * i]
-    if (2 * i + 1 < separated.length) draw[pos1] = separated[2 * i + 1]
+  // Shuffle pairs so club positions are randomised across the bracket
+  const shuffledPairs = shuffle(fullPairs)
+
+  // Track what's been assigned to each pair slot
+  const pairAssigned: [Team | null, Team | null][] = shuffledPairs.map(() => [null, null])
+
+  // Greedy: assign conflicting teams so no R1 pair contains two same-club teams.
+  // Largest clubs are handled first to maximise separation.
+  const conflictingClubs = [...conflicting.values()].map((g) => shuffle(g))
+  conflictingClubs.sort((a, b) => b.length - a.length)
+
+  let nextPair = 0
+  for (const clubTeams of conflictingClubs) {
+    for (const team of clubTeams) {
+      const clubKey = getClubKey(team)
+      let placed = false
+      // Find the next pair that has a free slot and no same-club team
+      for (let offset = 0; offset < shuffledPairs.length; offset++) {
+        const pi = (nextPair + offset) % shuffledPairs.length
+        const [a, b] = pairAssigned[pi]
+        if ((a !== null && b !== null)) continue  // pair full
+        if ((a && getClubKey(a) === clubKey) || (b && getClubKey(b) === clubKey)) continue
+        if (a === null) pairAssigned[pi][0] = team
+        else pairAssigned[pi][1] = team
+        nextPair = (pi + 1) % shuffledPairs.length
+        placed = true
+        break
+      }
+      if (!placed) {
+        // All pairs either full or have a same-club team — use the least-full pair (unavoidable conflict)
+        const pi = pairAssigned.reduce(
+          (best, [a, b], idx) =>
+            (a === null || b === null) && (pairAssigned[best][0] !== null && pairAssigned[best][1] !== null)
+              ? idx : best,
+          0
+        )
+        if (pairAssigned[pi][0] === null) pairAssigned[pi][0] = team
+        else if (pairAssigned[pi][1] === null) pairAssigned[pi][1] = team
+        // else all fullPairs are full — team will fall through to singleSlots below
+      }
+    }
   }
 
-  // Fill singleton slots (opposite slot is a bye) with leftover teams
-  const singleTeams = separated.slice(fullPairs.length * 2)
-  for (let i = 0; i < singleSlots.length && i < singleTeams.length; i++) {
-    draw[singleSlots[i]] = singleTeams[i]
+  // Write pair assignments to draw
+  for (let pi = 0; pi < shuffledPairs.length; pi++) {
+    const [pos0, pos1] = shuffledPairs[pi]
+    if (pairAssigned[pi][0]) draw[pos0] = pairAssigned[pi][0]!
+    if (pairAssigned[pi][1]) draw[pos1] = pairAssigned[pi][1]!
+  }
+
+  // Fill all remaining null slots (empty pair slots + singleSlots) with free teams randomly
+  const shuffledFree = shuffle(free)
+  let freeIdx = 0
+  for (let pi = 0; pi < shuffledPairs.length; pi++) {
+    const [pos0, pos1] = shuffledPairs[pi]
+    if (draw[pos0] === null && freeIdx < shuffledFree.length) draw[pos0] = shuffledFree[freeIdx++]
+    if (draw[pos1] === null && freeIdx < shuffledFree.length) draw[pos1] = shuffledFree[freeIdx++]
+  }
+
+  // Conflicting-team overflow (more conflicting teams than fullPair slots) + any leftover free
+  // go to singleSlots — facing a bye, so no club conflict
+  const overflowTeams = [
+    ...teams.filter((t) => draw.every((s) => typeof s === 'string' || !s || (s as Team).id?.toString() !== t.id?.toString())),
+    ...shuffledFree.slice(freeIdx),
+  ]
+  let overflowIdx = 0
+  for (const slot of singleSlots) {
+    if (draw[slot] === null && overflowIdx < overflowTeams.length) {
+      draw[slot] = overflowTeams[overflowIdx++]
+    }
   }
 }
 
@@ -88,24 +144,18 @@ const group = (teamList: Team[], groupCount: number, { separateClub = true } = {
     return groups
   }
 
-  // Club-aware assignment: each club's teams are distributed across different groups.
-  // Sort clubs by size descending so the largest clubs are spread first.
-  const clubMap = new Map<string, Team[]>()
-  for (const team of teamList) {
-    const key = getClubKey(team)
-    if (!clubMap.has(key)) clubMap.set(key, [])
-    clubMap.get(key)!.push(team)
-  }
-  const clubGroups = [...clubMap.values()].map((g) => shuffle(g))
-  clubGroups.sort((a, b) => b.length - a.length)
+  const { conflicting, free } = splitByConflict(teamList)
+
+  // Greedy assignment for multi-member clubs: distribute each club's teams
+  // across different groups. Largest clubs are handled first.
+  const conflictingClubs = [...conflicting.values()].map((g) => shuffle(g))
+  conflictingClubs.sort((a, b) => b.length - a.length)
 
   let nextGroup = 0
-  for (const clubTeams of clubGroups) {
+  for (const clubTeams of conflictingClubs) {
     for (const team of clubTeams) {
       const clubKey = getClubKey(team)
       let placed = false
-      // Try groups in round-robin order starting from nextGroup, skipping any group
-      // that already contains a team from the same club.
       for (let offset = 0; offset < groupCount; offset++) {
         const gi = (nextGroup + offset) % groupCount
         if (!groups[gi].some((t) => getClubKey(t) === clubKey)) {
@@ -116,7 +166,7 @@ const group = (teamList: Team[], groupCount: number, { separateClub = true } = {
         }
       }
       if (!placed) {
-        // All groups already have a same-club team (unavoidable); use smallest group.
+        // Unavoidable conflict — use smallest group
         const gi = groups.reduce(
           (minIdx, g, idx) => g.length < groups[minIdx].length ? idx : minIdx, 0
         )
@@ -124,6 +174,14 @@ const group = (teamList: Team[], groupCount: number, { separateClub = true } = {
         nextGroup = (gi + 1) % groupCount
       }
     }
+  }
+
+  // Place remaining teams (no club conflict) randomly into the smallest available groups
+  for (const team of shuffle(free)) {
+    const gi = groups.reduce(
+      (minIdx, g, idx) => g.length < groups[minIdx].length ? idx : minIdx, 0
+    )
+    groups[gi].push(team)
   }
 
   return groups

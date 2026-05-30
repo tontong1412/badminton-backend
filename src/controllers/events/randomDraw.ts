@@ -39,6 +39,10 @@ const getRandomDraw =  async(
       res.status(400).send({ message:'should have at least 3 teams in 1 group' })
       return
     }
+    if(groupCount > constants.EVENT.GROUP_NAME.length){
+      res.status(400).send({ message:`maximum group count is ${constants.EVENT.GROUP_NAME.length}` })
+      return
+    }
     draw.group = randomDraw.group(event.teams, groupCount)
 
     const qualifiedRanks = Math.floor(qualifiedCount / groupCount)
