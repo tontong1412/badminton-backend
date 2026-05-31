@@ -5,18 +5,37 @@ import TournamentModel from '../../schema/tournament'
 import randomDraw from '../../utils/tournament/randomDraw'
 import constants from '../../constants'
 
+type DrawStage = 'group' | 'ko' | 'consolation' | 'all'
+
 interface RandomDrawPayload {
   eventID: string;
+  stage?: DrawStage;
   groupCount?: number;
   qualifiedCount?: number;
   qualifiedConsolationCount?: number;
 }
 
-const getRandomDraw =  async(
+const buildKoDraw = (groupCount: number, qualifiedCount: number, startRank = 1) => {
+  const qualifiedRanks = Math.floor(qualifiedCount / groupCount)
+  const positions: string[] = []
+  let maindrawRank = startRank
+  for (let rank = 0; rank < qualifiedRanks; rank++) {
+    for (let groupIndex = 0; groupIndex < groupCount; groupIndex++) {
+      positions.push(`ที่ ${rank + startRank} กลุ่ม ${constants.EVENT.GROUP_NAME[groupIndex].NAME}`)
+    }
+    maindrawRank++
+  }
+  while (positions.length < qualifiedCount) {
+    positions.push('ที่ X กลุ่ม X')
+  }
+  return { positions, maindrawRank }
+}
+
+const getRandomDraw = async(
   req: Request<unknown, unknown, RandomDrawPayload, unknown>,
   res: Response<Event | ErrorResponse, ResponseLocals>) => {
   const { user }: ResponseLocals = res.locals as ResponseLocals
-  const { eventID, groupCount, qualifiedCount, qualifiedConsolationCount } = req.body
+  const { eventID, stage = 'all', groupCount, qualifiedCount, qualifiedConsolationCount } = req.body
 
   const tournament = await TournamentModel.findOne({ 'events.id': eventID }).select('managers')
   if(!tournament?.managers?.map((m) => m.id?.toString()).includes(user.playerID.toString())){
@@ -24,66 +43,79 @@ const getRandomDraw =  async(
     return
   }
 
-  const event = await EventModel.findById(eventID).select('format teams')
+  const event = await EventModel.findById(eventID).select('format teams draw')
   if(!event){
     res.status(404).send({ message: 'Event not found' })
     return
   }
-  const draw :Event['draw'] = {}
+
   if(event.format === EventFormat.GroupPlayoff || event.format === EventFormat.GroupPlayoffConsolation){
     if(!groupCount || !qualifiedCount){
-      res.status(400).send({ message:'mising number of group' })
-      return
-    }
-    if(event.teams.length < 3 * groupCount){
-      res.status(400).send({ message:'should have at least 3 teams in 1 group' })
+      res.status(400).send({ message: 'missing number of group' })
       return
     }
     if(groupCount > constants.EVENT.GROUP_NAME.length){
-      res.status(400).send({ message:`maximum group count is ${constants.EVENT.GROUP_NAME.length}` })
+      res.status(400).send({ message: `maximum group count is ${constants.EVENT.GROUP_NAME.length}` })
       return
     }
-    draw.group = randomDraw.group(event.teams, groupCount)
 
-    const qualifiedRanks = Math.floor(qualifiedCount / groupCount)
-    const qualifiedPositions = []
-    let maindrawRank = 1
-    for (let rank = 0; rank < qualifiedRanks; rank++) {
-    // Iterate through each group
-      for (let groupIndex = 0; groupIndex < groupCount; groupIndex++) {
-      // Create the string and push it to the array
-        qualifiedPositions.push(`ที่ ${rank + 1} กลุ่ม ${constants.EVENT.GROUP_NAME[groupIndex].NAME}`)
-      }
-      maindrawRank++
-    }
-    while (qualifiedPositions.length < qualifiedCount) {
-      qualifiedPositions.push('ที่ X กลุ่ม X')
-    }
-    draw.ko = randomDraw.bracket(qualifiedPositions, { seed:true, seedCount:Math.pow(2, Math.floor(Math.log2(qualifiedPositions.length))) })
+    const updateFields: Record<string, unknown> = {}
 
-    if(event.format === EventFormat.GroupPlayoffConsolation  && qualifiedConsolationCount){
-      const qualifiedConsolationRanks = Math.floor(qualifiedConsolationCount / groupCount)
-      const qualifiedConsolationPositions = []
-      for (let rank = 0; rank < qualifiedConsolationRanks; rank++) {
-        // Iterate through each group
-        for (let groupIndex = 0; groupIndex < groupCount; groupIndex++) {
-          // Create the string and push it to the array
-          qualifiedConsolationPositions.push(`ที่ ${rank + maindrawRank} กลุ่ม ${constants.EVENT.GROUP_NAME[groupIndex].NAME}`)
-        }
+    if(stage === 'group' || stage === 'all'){
+      if(event.teams.length < 3 * groupCount){
+        res.status(400).send({ message: 'should have at least 3 teams in 1 group' })
+        return
       }
-      while (qualifiedConsolationPositions.length < qualifiedConsolationCount) {
-        qualifiedConsolationPositions.push('ที่ X กลุ่ม X')
-      }
-      draw.consolation = randomDraw.bracket(qualifiedConsolationPositions, { seed:true, seedCount:Math.pow(2, Math.floor(Math.log2(qualifiedConsolationPositions.length))) })
+      updateFields['draw.group'] = randomDraw.group(event.teams, groupCount)
     }
-  } else if(event.format === EventFormat.SingleElimination){
-    draw.elimination = randomDraw.bracket(event.teams)
+
+    if(stage === 'ko' || stage === 'all'){
+      const { positions, maindrawRank } = buildKoDraw(groupCount, qualifiedCount)
+      updateFields['draw.ko'] = randomDraw.bracket(positions, {
+        seed: true,
+        seedCount: Math.pow(2, Math.floor(Math.log2(positions.length))),
+      })
+
+      if(event.format === EventFormat.GroupPlayoffConsolation && qualifiedConsolationCount && (stage === 'all')){
+        const { positions: consolationPositions } = buildKoDraw(groupCount, qualifiedConsolationCount, maindrawRank)
+        updateFields['draw.consolation'] = randomDraw.bracket(consolationPositions, {
+          seed: true,
+          seedCount: Math.pow(2, Math.floor(Math.log2(consolationPositions.length))),
+        })
+      }
+    }
+
+    if(stage === 'consolation'){
+      if(event.format !== EventFormat.GroupPlayoffConsolation || !qualifiedConsolationCount){
+        res.status(400).send({ message: 'consolation draw requires GroupPlayoffConsolation format and qualifiedConsolationCount' })
+        return
+      }
+      const existingKo = event.draw?.ko ?? []
+      const koLength = existingKo.filter((s: unknown) => s !== 'bye').length
+      const maindrawRank = koLength > 0 ? Math.floor(koLength / groupCount) + 1 : 1
+      const { positions } = buildKoDraw(groupCount, qualifiedConsolationCount, maindrawRank)
+      updateFields['draw.consolation'] = randomDraw.bracket(positions, {
+        seed: true,
+        seedCount: Math.pow(2, Math.floor(Math.log2(positions.length))),
+      })
+    }
+
+    const result = await EventModel.findByIdAndUpdate(eventID, { $set: updateFields }, { new: true })
+    res.send(result as Event)
+    return
   }
 
-  const result = await EventModel.findByIdAndUpdate(eventID, { draw }, { new:true })
+  if(event.format === EventFormat.SingleElimination){
+    const result = await EventModel.findByIdAndUpdate(
+      eventID,
+      { $set: { 'draw.elimination': randomDraw.bracket(event.teams) } },
+      { new: true }
+    )
+    res.send(result as Event)
+    return
+  }
 
-  res.send(result as Event)
-  return
+  res.status(400).send({ message: 'Unsupported event format' })
 }
 
 export default getRandomDraw
