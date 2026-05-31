@@ -165,11 +165,209 @@ describe('randomDraw.bracket – separateClub option', () => {
     expect((result[result.length - 1] as Team).id.toString()).toBe(seed2.id.toString())
   })
 
+  it('places seeds 3 and 4 into the middle pair in an 8-slot bracket', () => {
+    const seeds = IDS.slice(0, 4).map((id, i) => makeTeam(id, `SeedClub${i + 1}`))
+    const rest = IDS.slice(4, 8).map((id, i) => makeTeam(id, `RestClub${i + 1}`))
+
+    const result = randomDraw.bracket([...seeds, ...rest], {
+      seed: true,
+      seedCount: 4,
+      separateClub: true,
+    })
+
+    expect((result[0] as Team).id.toString()).toBe(seeds[0].id.toString())
+    expect((result[7] as Team).id.toString()).toBe(seeds[1].id.toString())
+
+    const middlePairIds = [result[3], result[4]]
+      .filter((slot): slot is Team => typeof slot !== 'string')
+      .map((team) => team.id.toString())
+
+    expect(middlePairIds).toHaveLength(2)
+    expect(middlePairIds.sort()).toEqual([
+      seeds[2].id.toString(),
+      seeds[3].id.toString(),
+    ].sort())
+  })
+
+  it('returns empty draw when seedCount is not a power of 2', () => {
+    const teams = IDS.slice(0, 8).map((id, i) => makeTeam(id, i % 2 === 0 ? 'A' : 'B'))
+    const result = randomDraw.bracket(teams, {
+      seed: true,
+      seedCount: 3,
+      separateClub: true,
+    })
+
+    expect(result).toEqual([])
+  })
+
+  it('keeps all teams and no byes when seedCount equals bracket size', () => {
+    const teams = IDS.slice(0, 8).map((id, i) =>
+      makeTeam(id, ['A', 'B', 'C', 'D'][i % 4])
+    )
+
+    const result = randomDraw.bracket(teams, {
+      seed: true,
+      seedCount: 8,
+      separateClub: true,
+    })
+
+    expect(result).toHaveLength(8)
+    expect(result.filter((slot) => slot === 'bye')).toHaveLength(0)
+
+    const drawnTeamIds = result
+      .filter((slot): slot is Team => typeof slot !== 'string')
+      .map((team) => team.id.toString())
+      .sort()
+
+    expect(drawnTeamIds).toEqual(teams.map((team) => team.id.toString()).sort())
+  })
+
+  it('places byes next to top 2 seeds in a 16-slot bracket', () => {
+    const seed1 = makeTeam(IDS[0], 'Alpha')
+    const seed2 = makeTeam(IDS[1], 'Beta')
+    const rest = IDS.slice(2, 14).map((id, i) =>
+      makeTeam(id, ['A', 'B', 'C', 'D'][i % 4])
+    )
+
+    const result = randomDraw.bracket([seed1, seed2, ...rest], {
+      seed: true,
+      seedCount: 2,
+      separateClub: true,
+    })
+
+    expect(result).toHaveLength(16)
+    expect(result[1]).toBe('bye')
+    expect(result[14]).toBe('bye')
+  })
+
   it('behaves correctly when separateClub is true (default, no regression)', () => {
     const teams = IDS.slice(0, 8).map((id, i) => makeTeam(id, i % 2 === 0 ? 'A' : 'B'))
     const result = randomDraw.bracket(teams)
     expect(result).toHaveLength(8)
     const teamSlots = result.filter(s => typeof s !== 'string') as Team[]
     expect(teamSlots).toHaveLength(8)
+  })
+})
+
+// ── group+playoff bracket draw ────────────────────────────────────────────────
+
+describe('randomDraw.bracketGroupPlayoff', () => {
+  /** Returns the R1 partner index for a given bracket slot. */
+  const partnerOf = (pos: number) => pos % 2 === 0 ? pos + 1 : pos - 1
+
+  it('returns empty array when winners and runnersUp lengths differ', () => {
+    const winners = [makeTeam(IDS[0])]
+    const runnersUp = [makeTeam(IDS[1]), makeTeam(IDS[2])]
+    expect(randomDraw.bracketGroupPlayoff(winners, runnersUp)).toEqual([])
+  })
+
+  it('returns empty array when winners array is empty', () => {
+    expect(randomDraw.bracketGroupPlayoff([], [])).toEqual([])
+  })
+
+  it('produces the next power-of-2 bracket size', () => {
+    const n = 4 // 4 groups → 8 slots (exact)
+    const winners   = IDS.slice(0, n).map(id => makeTeam(id))
+    const runnersUp = IDS.slice(n, 2 * n).map(id => makeTeam(id))
+    const result = randomDraw.bracketGroupPlayoff(winners, runnersUp)
+    expect(result).toHaveLength(8)
+  })
+
+  it('contains all teams with no duplicates or missing entries', () => {
+    const n = 4
+    const winners   = IDS.slice(0, n).map(id => makeTeam(id))
+    const runnersUp = IDS.slice(n, 2 * n).map(id => makeTeam(id))
+    const result = randomDraw.bracketGroupPlayoff(winners, runnersUp)
+    const teamIds = result.filter((s): s is Team => typeof s !== 'string').map(t => t.id.toString()).sort()
+    const expected = [...winners, ...runnersUp].map(t => t.id.toString()).sort()
+    expect(teamIds).toEqual(expected)
+  })
+
+  it('places all winners in seeded (non-adjacent-to-each-other) positions', () => {
+    const n = 4
+    const winners   = IDS.slice(0, n).map(id => makeTeam(id))
+    const runnersUp = IDS.slice(n, 2 * n).map(id => makeTeam(id))
+    const result = randomDraw.bracketGroupPlayoff(winners, runnersUp)
+    const winnerIds = new Set(winners.map(t => t.id.toString()))
+
+    // No two winners should share an R1 matchup pair
+    for (let i = 0; i < result.length - 1; i += 2) {
+      const a = result[i]
+      const b = result[i + 1]
+      const aIsWinner = typeof a !== 'string' && winnerIds.has(a.id.toString())
+      const bIsWinner = typeof b !== 'string' && winnerIds.has(b.id.toString())
+      expect(aIsWinner && bIsWinner).toBe(false)
+    }
+  })
+
+  it('never places the same-group winner and runner-up in the same R1 match', () => {
+    const n = 4
+    const winners   = IDS.slice(0, n).map(id => makeTeam(id))
+    const runnersUp = IDS.slice(n, 2 * n).map(id => makeTeam(id))
+    const result = randomDraw.bracketGroupPlayoff(winners, runnersUp)
+
+    const winnerIdx = new Map(winners.map((t, i) => [t.id.toString(), i]))
+
+    for (let pos = 0; pos < result.length; pos++) {
+      const slot = result[pos]
+      if (typeof slot === 'string' || !winnerIdx.has(slot.id.toString())) continue
+      const groupIndex = winnerIdx.get(slot.id.toString())!
+      const partner = result[partnerOf(pos)]
+      if (typeof partner === 'string') continue
+      expect(partner.id.toString()).not.toBe(runnersUp[groupIndex].id.toString())
+    }
+  })
+
+  it('has no byes when group count gives a power-of-2 total (4 groups)', () => {
+    const n = 4
+    const winners   = IDS.slice(0, n).map(id => makeTeam(id))
+    const runnersUp = IDS.slice(n, 2 * n).map(id => makeTeam(id))
+    const result = randomDraw.bracketGroupPlayoff(winners, runnersUp)
+    expect(result.filter(s => s === 'bye')).toHaveLength(0)
+  })
+
+  it('inserts the correct number of byes for non-power-of-2 group counts (3 groups)', () => {
+    const n = 3  // 6 teams → 8-slot bracket → 2 byes
+    const winners   = IDS.slice(0, n).map(id => makeTeam(id))
+    const runnersUp = IDS.slice(n, 2 * n).map(id => makeTeam(id))
+    const result = randomDraw.bracketGroupPlayoff(winners, runnersUp)
+    expect(result).toHaveLength(8)
+    expect(result.filter(s => s === 'bye')).toHaveLength(2)
+    const teamIds = result.filter((s): s is Team => typeof s !== 'string').map(t => t.id.toString()).sort()
+    expect(teamIds).toEqual([...winners, ...runnersUp].map(t => t.id.toString()).sort())
+  })
+
+  it('still satisfies no-same-group-R1 when byes are present (3 groups)', () => {
+    const n = 3
+    const winners   = IDS.slice(0, n).map(id => makeTeam(id))
+    const runnersUp = IDS.slice(n, 2 * n).map(id => makeTeam(id))
+    const result = randomDraw.bracketGroupPlayoff(winners, runnersUp)
+    const winnerIdx = new Map(winners.map((t, i) => [t.id.toString(), i]))
+
+    for (let pos = 0; pos < result.length; pos++) {
+      const slot = result[pos]
+      if (typeof slot === 'string' || !winnerIdx.has(slot.id.toString())) continue
+      const groupIndex = winnerIdx.get(slot.id.toString())!
+      const partner = result[partnerOf(pos)]
+      if (typeof partner === 'string') continue
+      expect(partner.id.toString()).not.toBe(runnersUp[groupIndex].id.toString())
+    }
+  })
+
+  it('works for a larger bracket (8 groups, 16 slots, no byes)', () => {
+    const n = 8
+    const winners   = IDS.slice(0, n).map(id => makeTeam(id))
+    const runnersUp = IDS.slice(n, 2 * n).map(id => makeTeam(id))
+    const result = randomDraw.bracketGroupPlayoff(winners, runnersUp)
+    expect(result).toHaveLength(16)
+    expect(result.filter(s => s === 'bye')).toHaveLength(0)
+    const winnerIds = new Set(winners.map(t => t.id.toString()))
+    for (let i = 0; i < result.length - 1; i += 2) {
+      const a = result[i]
+      const b = result[i + 1]
+      const aIsWinner = typeof a !== 'string' && winnerIds.has(a.id.toString())
+      const bIsWinner = typeof b !== 'string' && winnerIds.has(b.id.toString())
+      expect(aIsWinner && bIsWinner).toBe(false)
+    }
   })
 })

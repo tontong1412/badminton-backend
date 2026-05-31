@@ -193,6 +193,7 @@ const bracket = (teamList: (Team|string)[], { seed = false, seedCount = 2, separ
     return []
   }
 
+  const inputTeams = [...teamList]
   const teamCount = teamList.length
 
   const bracketSlot = Math.pow(2, Math.ceil(Math.log2(teamCount)))
@@ -205,19 +206,19 @@ const bracket = (teamList: (Team|string)[], { seed = false, seedCount = 2, separ
   }
 
   if(seed){
-    if (Math.log2(seedCount) % 1 != 0) {
-      console.error('number should be in the form of 2^n')
+    if (!Number.isInteger(seedCount) || seedCount < 2 || seedCount > bracketSlot || Math.log2(seedCount) % 1 !== 0) {
+      console.error('seedCount must be an integer power of 2 between 2 and bracket size')
       return []
     }
     const seedPositions = findSeededPosition(seedCount, bracketSlot)
     for(let i = 0;i < seedPositions.length;i++){
-      if(teamList.length > 0){
-        draw[seedPositions[i]] = teamList.shift() ?? 'bye'
+      if(inputTeams.length > 0){
+        draw[seedPositions[i]] = inputTeams.shift() ?? 'bye'
       }
     }
   }
 
-  const remainingTeams = teamList.filter((t): t is Team => typeof t !== 'string')
+  const remainingTeams = inputTeams.filter((t): t is Team => typeof t !== 'string')
 
   if (separateClub) {
     fillBracketWithClubSeparation(draw, remainingTeams)
@@ -242,66 +243,210 @@ const shuffle = <T>(array: T[]): T[] => {
   return shuffledArray
 }
 
+const getByeCandidateOrder = (totalSlots: number): number[] => {
+  const candidates: number[] = [1, totalSlots - 2]
+
+  // Mirror bye slots across progressively smaller bracket sections.
+  for (let level = 1; level < Math.log2(totalSlots); level++) {
+    const sections = Math.pow(2, level)
+    const midpointsPerSection = Math.pow(2, level - 1)
+
+    for (let j = 0; j < midpointsPerSection; j++) {
+      const sectionMidpoint = (2 * j + 1) * totalSlots / sections
+      candidates.push(sectionMidpoint - 2)
+    }
+    for (let j = 0; j < midpointsPerSection; j++) {
+      const sectionMidpoint = (2 * j + 1) * totalSlots / sections
+      candidates.push(sectionMidpoint + 1)
+    }
+  }
+
+  return candidates.filter((pos, idx, arr) =>
+    Number.isInteger(pos)
+    && pos >= 0
+    && pos < totalSlots
+    && arr.indexOf(pos) === idx
+  )
+}
+
 const findByePosition = (byeCount: number, totalSlots: number): number[] => {
-  const section = Math.ceil(Math.log2(byeCount))
-  const byePosition: number[] = []
-  const checkCountandPush = (selectedPosition:number) => {
-    if (byeCount > 0) {
-      byePosition.push(selectedPosition)
-      byeCount--
-    }
+  if (!Number.isInteger(byeCount) || byeCount <= 0) {
+    return []
   }
-  if (section == 0) {
-    checkCountandPush(1)
-    checkCountandPush(totalSlots - 2)
-  }else{
-    for (let i = 0; i < section; i++) {
-      if (i == 0) {
-        checkCountandPush(i + 1)
-        checkCountandPush(totalSlots - 2)
-      } else {
-        for (let j = 0; j < Math.pow(2, i - 1); j++) {
-          const newBottom = (2 * j + 1) * totalSlots / Math.pow(2, i)
-          checkCountandPush(newBottom - 2)
-        }
-        for (let j = 0; j < Math.pow(2, i - 1); j++) {
-          const newBottom = (2 * j + 1) * totalSlots / Math.pow(2, i)
-          checkCountandPush(newBottom + 1)
-        }
-      }
-    }
+  if (!Number.isInteger(totalSlots) || totalSlots < 2 || Math.log2(totalSlots) % 1 !== 0) {
+    return []
   }
-  byePosition.sort((a, b) => a - b)
-  return byePosition
+
+  const maxByes = Math.min(byeCount, Math.floor(totalSlots / 2))
+  const byePositions = getByeCandidateOrder(totalSlots).slice(0, maxByes)
+  return byePositions.sort((a, b) => a - b)
+}
+
+const getSeedPositionTiers = (totalSlots: number): number[][] => {
+  const maxTier = Math.log2(totalSlots)
+  const tiers: number[][] = [[0, totalSlots - 1]]
+
+  for (let tier = 1; tier < maxTier; tier++) {
+    const sections = Math.pow(2, tier)
+    const tierPositions: number[] = []
+
+    for (let j = 0; j < Math.pow(2, tier - 1); j++) {
+      const sectionMidpoint = (2 * j + 1) * totalSlots / sections
+      tierPositions.push(sectionMidpoint - 1)
+    }
+    for (let j = 0; j < Math.pow(2, tier - 1); j++) {
+      const sectionMidpoint = (2 * j + 1) * totalSlots / sections
+      tierPositions.push(sectionMidpoint)
+    }
+
+    tiers.push(tierPositions)
+  }
+
+  return tiers
 }
 
 const findSeededPosition = (seededCount: number, totalSlots: number): number[] => {
-  // if (Math.log2(seededCount) % 1 != 0) throw 'number should be in the form of 2^n'
-  const section = Math.ceil(Math.log2(seededCount))
-  let positions: number[] = []
-  for (let i = 0; i < section; i++) {
-    let tempPosition: number[] = []
-    if (i == 0) { // 1st and 2nd seed
-      tempPosition.push(0)
-      tempPosition.push(totalSlots - 1)
-    } else {
-      for (let j = 0; j < Math.pow(2, i - 1); j++) {
-        const newBottom = (2 * j + 1) * totalSlots / Math.pow(2, i)
-        tempPosition.push(newBottom - 1)
-      }
-      for (let j = 0; j < Math.pow(2, i - 1); j++) {
-        const newBottom = (2 * j + 1) * totalSlots / Math.pow(2, i)
-        tempPosition.push(newBottom)
-      }
-      tempPosition = shuffle(tempPosition)
-    }
-    positions = [...positions, ...tempPosition]
+  if (!Number.isInteger(seededCount) || seededCount < 2 || Math.log2(seededCount) % 1 !== 0) {
+    return []
   }
+  if (!Number.isInteger(totalSlots) || totalSlots < 2 || Math.log2(totalSlots) % 1 !== 0) {
+    return []
+  }
+  if (seededCount > totalSlots) {
+    return []
+  }
+
+  const tiers = getSeedPositionTiers(totalSlots)
+  const requiredTierCount = Math.ceil(Math.log2(seededCount))
+  const positions: number[] = []
+
+  for (let i = 0; i < requiredTierCount; i++) {
+    const tier = tiers[i] ?? []
+    positions.push(...(i === 0 ? tier : shuffle(tier)))
+  }
+
   return positions
+}
+
+/**
+ * Generates a bracket for a group+playoff tournament.
+ *
+ * - `winners[i]` and `runnersUp[i]` are the 1st and 2nd place from the same
+ *   group (indices must correspond).
+ * - Winners are placed in seeded positions so no two winners can meet before
+ *   the semi-final stage (or equivalent).
+ * - Same-group winner and runner-up are guaranteed NOT to share an R1 matchup.
+ *   Each winner's R1 partner slot receives a runner-up from a DIFFERENT group.
+ * - The assignment of groups to bracket positions is fully randomised.
+ * - When byes are present (2 × groups is not a power of 2), the top-seeded
+ *   winners receive the byes.  Their runners-up are redistributed to other R1
+ *   partner slots (runners-up from bye-receiving groups are "free" and are
+ *   preferred for those slots).  If more runners-up remain than available R1
+ *   partner slots they go to remaining empty slots and may face another
+ *   runner-up in R1 — unavoidable with non-power-of-2 group counts.
+ */
+const bracketGroupPlayoff = (
+  winners: Team[],
+  runnersUp: Team[],
+  { separateClub = true }: { separateClub?: boolean } = {}
+): (Team | string)[] => {
+  if (winners.length === 0 || winners.length !== runnersUp.length) {
+    console.error('bracketGroupPlayoff: winners and runnersUp must be non-empty arrays of equal length')
+    return []
+  }
+
+  const teamCount = winners.length + runnersUp.length
+  const bracketSize = Math.pow(2, Math.ceil(Math.log2(teamCount)))
+  const draw: (Team | string | null)[] = Array(bracketSize).fill(null)
+
+  // Place byes — always adjacent to the top-seeded positions
+  for (const pos of findByePosition(bracketSize - teamCount, bracketSize)) {
+    draw[pos] = 'bye'
+  }
+
+  // Build seeded-position list deep enough to cover all winners.
+  const tierCount = Math.max(1, Math.ceil(Math.log2(Math.max(winners.length, 2))))
+  const tiers = getSeedPositionTiers(bracketSize)
+  const seedPositions: number[] = []
+  for (let i = 0; i < tierCount; i++) {
+    const tier = tiers[i] ?? []
+    seedPositions.push(...(i === 0 ? tier : shuffle(tier)))
+  }
+
+  // Randomise which group occupies which seed position (winner+runnerUp stay paired).
+  const shuffledGroupIndices = shuffle(Array.from({ length: winners.length }, (_, i) => i))
+
+  // Assign winners to seed positions.
+  for (let i = 0; i < shuffledGroupIndices.length; i++) {
+    draw[seedPositions[i]] = winners[shuffledGroupIndices[i]]
+  }
+
+  // Classify each seed position: does its R1 partner slot hold a 'bye' or is it open?
+  const byeGroupIndices: number[] = []   // original group indices whose winner got a bye partner
+  const openPartnerSlots: { partnerPos: number; forbidGroupIdx: number }[] = []
+
+  for (let i = 0; i < shuffledGroupIndices.length; i++) {
+    const seedPos = seedPositions[i]
+    const partnerPos = seedPos % 2 === 0 ? seedPos + 1 : seedPos - 1
+    const groupIdx = shuffledGroupIndices[i]
+    if (draw[partnerPos] === 'bye') {
+      byeGroupIndices.push(groupIdx)
+    } else {
+      openPartnerSlots.push({ partnerPos, forbidGroupIdx: groupIdx })
+    }
+  }
+
+  // Fill each open R1 partner slot with a runner-up from a DIFFERENT group.
+  // Runners-up from bye-receiving groups are "free" (no forbidden-slot constraint
+  // for them); prefer them first to keep the constraint set as small as possible.
+  const assigned = new Set<number>()
+
+  for (const { partnerPos, forbidGroupIdx } of openPartnerSlots) {
+    // Try "free" runners-up (bye groups) that are not the forbidden group
+    const freeEligible = byeGroupIndices.filter(
+      (gi) => !assigned.has(gi) && gi !== forbidGroupIdx
+    )
+    // Fall back to any unassigned runner-up not from the forbidden group
+    const anyEligible = shuffledGroupIndices.filter(
+      (gi) => !assigned.has(gi) && gi !== forbidGroupIdx
+    )
+    // Last resort: any unassigned runner-up (unavoidable same-group conflict)
+    const lastResort = shuffledGroupIndices.filter((gi) => !assigned.has(gi))
+
+    const pool = freeEligible.length > 0
+      ? freeEligible
+      : anyEligible.length > 0
+        ? anyEligible
+        : lastResort
+
+    if (pool.length === 0) continue
+    const picked = pool[Math.floor(Math.random() * pool.length)]
+    draw[partnerPos] = runnersUp[picked]
+    assigned.add(picked)
+  }
+
+  // Remaining runners-up fill any leftover null slots (overflow).
+  const overflowRunnersUp = shuffledGroupIndices
+    .filter((gi) => !assigned.has(gi))
+    .map((gi) => runnersUp[gi])
+
+  if (separateClub && overflowRunnersUp.length > 0) {
+    fillBracketWithClubSeparation(draw, overflowRunnersUp)
+  } else {
+    const shuffledOverflow = shuffle(overflowRunnersUp)
+    for (let pos = 0; pos < bracketSize; pos++) {
+      if (draw[pos] === null && shuffledOverflow.length > 0) {
+        draw[pos] = shuffledOverflow.shift()!
+      }
+    }
+  }
+
+  return draw as (Team | string)[]
 }
 
 
 export default{
   group,
   bracket,
+  bracketGroupPlayoff,
 }

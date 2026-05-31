@@ -19,8 +19,19 @@ const buildKoDraw = (groupCount: number, qualifiedCount: number, startRank = 1) 
   const qualifiedRanks = Math.floor(qualifiedCount / groupCount)
   const positions: string[] = []
   let maindrawRank = startRank
+
+  const shuffle = <T>(array: T[]): T[] => {
+    const shuffled = [...array]
+    for (let i = shuffled.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1))
+      ;[shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]]
+    }
+    return shuffled
+  }
+
   for (let rank = 0; rank < qualifiedRanks; rank++) {
-    for (let groupIndex = 0; groupIndex < groupCount; groupIndex++) {
+    const shuffledGroups = shuffle(Array.from({ length: groupCount }, (_, idx) => idx))
+    for (const groupIndex of shuffledGroups) {
       positions.push(`ที่ ${rank + startRank} กลุ่ม ${constants.EVENT.GROUP_NAME[groupIndex].NAME}`)
     }
     maindrawRank++
