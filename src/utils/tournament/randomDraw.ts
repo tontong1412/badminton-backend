@@ -122,7 +122,7 @@ const fillBracketWithClubSeparation = (
   // Conflicting-team overflow (more conflicting teams than fullPair slots) + any leftover free
   // go to singleSlots — facing a bye, so no club conflict
   const overflowTeams = [
-    ...teams.filter((t) => draw.every((s) => typeof s === 'string' || !s || (s as Team).id?.toString() !== t.id?.toString())),
+    ...teams.filter((t) => draw.every((s) => typeof s === 'string' || !s || s.id?.toString() !== t.id?.toString())),
     ...shuffledFree.slice(freeIdx),
   ]
   let overflowIdx = 0
@@ -357,7 +357,7 @@ const bracketGroupPlayoff = (
 
   const teamCount = winners.length + runnersUp.length
   const bracketSize = Math.pow(2, Math.ceil(Math.log2(teamCount)))
-  const draw: (Team | string | null)[] = Array(bracketSize).fill(null)
+  const draw: (Team | string | null)[] = Array<Team | string | null>(bracketSize).fill(null)
 
   // Place byes — always adjacent to the top-seeded positions
   for (const pos of findByePosition(bracketSize - teamCount, bracketSize)) {
