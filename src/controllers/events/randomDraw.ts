@@ -60,7 +60,9 @@ const getRandomDraw = async(
     return
   }
 
-  if(event.format === EventFormat.GroupPlayoff || event.format === EventFormat.GroupPlayoffConsolation){
+  const normalizedFormat = (event.format as string)?.toLowerCase()
+
+  if(normalizedFormat === EventFormat.GroupPlayoff.toLowerCase() || normalizedFormat === EventFormat.GroupPlayoffConsolation.toLowerCase()){
     if(!groupCount || !qualifiedCount){
       res.status(400).send({ message: 'missing number of group' })
       return
@@ -87,7 +89,7 @@ const getRandomDraw = async(
         seedCount: Math.pow(2, Math.floor(Math.log2(positions.length))),
       })
 
-      if(event.format === EventFormat.GroupPlayoffConsolation && qualifiedConsolationCount && (stage === 'all')){
+      if(normalizedFormat === EventFormat.GroupPlayoffConsolation.toLowerCase() && qualifiedConsolationCount && (stage === 'all')){
         const { positions: consolationPositions } = buildKoDraw(groupCount, qualifiedConsolationCount, maindrawRank)
         updateFields['draw.consolation'] = randomDraw.bracket(consolationPositions, {
           seed: true,
@@ -97,7 +99,7 @@ const getRandomDraw = async(
     }
 
     if(stage === 'consolation'){
-      if(event.format !== EventFormat.GroupPlayoffConsolation || !qualifiedConsolationCount){
+      if(normalizedFormat !== EventFormat.GroupPlayoffConsolation.toLowerCase() || !qualifiedConsolationCount){
         res.status(400).send({ message: 'consolation draw requires GroupPlayoffConsolation format and qualifiedConsolationCount' })
         return
       }
@@ -116,7 +118,7 @@ const getRandomDraw = async(
     return
   }
 
-  if(event.format === EventFormat.SingleElimination){
+  if(normalizedFormat === EventFormat.SingleElimination.toLowerCase()){
     const result = await EventModel.findByIdAndUpdate(
       eventID,
       { $set: { 'draw.elimination': randomDraw.bracket(event.teams) } },

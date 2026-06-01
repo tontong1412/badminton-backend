@@ -1,7 +1,7 @@
 import { Team } from '../../type'
 
 const getClubKey = (team: Team): string => {
-  const clubs = team.players.map((p) => p.club || '').filter(Boolean).sort()
+  const clubs = team.players.map((p) => (p.club || '').toLowerCase()).filter(Boolean).sort()
   return clubs.length > 0 ? clubs.join('+') : '__no_club__'
 }
 
