@@ -219,14 +219,25 @@ const bracket = (teamList: (Team|string)[], { seed = false, seedCount = 2, separ
   }
 
   const remainingTeams = inputTeams.filter((t): t is Team => typeof t !== 'string')
+  const remainingStrings = inputTeams.filter((t): t is string => typeof t === 'string')
 
-  if (separateClub) {
+  if (separateClub && remainingTeams.length > 0) {
     fillBracketWithClubSeparation(draw, remainingTeams)
-  } else {
+  } else if (remainingTeams.length > 0) {
     const shuffled = shuffle(remainingTeams)
     for(let i = 0;i < draw.length;i++){
       if(draw[i] === null && shuffled.length > 0){
         draw[i] = shuffled.shift() ?? 'error'
+      }
+    }
+  }
+
+  // Fill remaining null slots with strings (e.g., position labels from playoff draws)
+  if (remainingStrings.length > 0) {
+    const shuffledStrings = shuffle(remainingStrings)
+    for(let i = 0;i < draw.length;i++){
+      if(draw[i] === null && shuffledStrings.length > 0){
+        draw[i] = shuffledStrings.shift() ?? null
       }
     }
   }
