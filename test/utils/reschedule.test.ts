@@ -1,7 +1,6 @@
 /* eslint-disable @typescript-eslint/no-unused-vars, @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-argument, @typescript-eslint/unbound-method */
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { Types } from 'mongoose'
-import { Response } from 'express'
 import reschedule from '../../src/controllers/bookings/reschedule'
 import BookingModel from '../../src/schema/booking'
 import CourtModel from '../../src/schema/court'
@@ -23,7 +22,6 @@ describe('Reschedule Controller', () => {
   let mockBooking: any
   let mockSwapTarget: any
   let mockCourt: any
-  let mockTargetCourt: any
   let mockVenue: any
   let mockCurrentUser: any
 
@@ -77,14 +75,6 @@ describe('Reschedule Controller', () => {
       name: 'Court 1',
       status: 'active',
       venueID: new Types.ObjectId(),
-    }
-
-    mockTargetCourt = {
-      id: new Types.ObjectId(),
-      _id: new Types.ObjectId(),
-      name: 'Court 2',
-      status: 'active',
-      venueID: mockCourt.venueID,
     }
 
     // Mock venue
