@@ -49,10 +49,14 @@ const reschedule = async(
     return
   }
 
-  const targetCourtID = req.body.courtID ?? sourceCourt.id
-  const targetDate = req.body.date ?? booking.date
-  const targetStartTime = req.body.startTime
-  const targetEndTime = req.body.endTime
+  const targetCourtID = typeof req.body.courtID === 'string' && req.body.courtID.trim()
+    ? req.body.courtID
+    : (sourceCourt.id as string)
+  const targetDate = typeof req.body.date === 'string' && req.body.date.trim()
+    ? req.body.date
+    : booking.date
+  const targetStartTime = typeof req.body.startTime === 'string' ? req.body.startTime : ''
+  const targetEndTime = typeof req.body.endTime === 'string' ? req.body.endTime : ''
   const applyToBundle = req.body.applyToBundle === true
 
   if (!targetStartTime || !targetEndTime) {
@@ -81,8 +85,9 @@ const reschedule = async(
   }
 
   // ── Swap mode ─────────────────────────────────────────────────────────────
-  if (req.body.swapWithBookingID) {
-    const swapTarget = await BookingModel.findById(req.body.swapWithBookingID)
+  const swapWithBookingID = typeof req.body.swapWithBookingID === 'string' ? req.body.swapWithBookingID : null
+  if (swapWithBookingID) {
+    const swapTarget = await BookingModel.findById(swapWithBookingID)
     if (!swapTarget || swapTarget.status === BookingStatus.Cancelled) {
       res.status(404).json({ message: 'Swap target booking not found.' })
       return
@@ -145,11 +150,11 @@ const reschedule = async(
       return
     }
 
-    const changingCourt = targetCourt.id.toString() !== sourceCourt.id.toString()
+    const changingCourt = (targetCourt.id as string).toString() !== (sourceCourt.id as string).toString()
     const bundleBookingIDs = bundleBookings.map((b) => b.id as string)
 
     for (const item of bundleBookings) {
-      const effectiveCourtID = changingCourt ? targetCourt.id : item.courtID
+      const effectiveCourtID = changingCourt ? (targetCourt.id as string) : (item.courtID as string)
 
       const shiftedDate = new Date(item.date)
       shiftedDate.setDate(shiftedDate.getDate() + dayShift)
@@ -240,11 +245,11 @@ const reschedule = async(
   }
 
   const availability = await bookingUtils.checkSlotAvailability(
-    targetCourt.id,
+    targetCourt.id as string,
     normalizedDate,
     targetStartTime,
     targetEndTime,
-    booking.id,
+    booking.id as string,
   )
   if (!availability.available) {
     res.status(409).json({ message: 'Target slot is already booked.' })

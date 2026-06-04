@@ -122,7 +122,7 @@ const getActiveBookingsForDate = async(
   }
 
   const excludeSet = new Set(Array.isArray(excludeBookingIDs) ? excludeBookingIDs : [excludeBookingIDs])
-  return bookings.filter((booking) => !excludeSet.has(booking.id))
+  return bookings.filter((booking) => !excludeSet.has(booking.id as string))
 }
 
 const checkSlotAvailability = async(
