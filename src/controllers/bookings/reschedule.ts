@@ -154,7 +154,7 @@ const reschedule = async(
     const bundleBookingIDs = bundleBookings.map((b) => b.id as string)
 
     for (const item of bundleBookings) {
-      const effectiveCourtID = changingCourt ? (targetCourt.id as string) : (item.courtID as string)
+      const effectiveCourtID = changingCourt ? String(targetCourt.id) : String(item.courtID)
 
       const shiftedDate = new Date(item.date)
       shiftedDate.setDate(shiftedDate.getDate() + dayShift)
