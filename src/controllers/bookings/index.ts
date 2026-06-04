@@ -9,6 +9,7 @@ import getBundle from './getBundle'
 import getVenueBookings from './getVenueBookings'
 import markAsPaid from './markAsPaid'
 import payBooking from './payBooking'
+import reschedule from './reschedule'
 
 export default {
   createSingle: controllerErrorHandler(createSingle),
@@ -21,4 +22,5 @@ export default {
   payBooking: controllerErrorHandler(payBooking),
   approvePayment: controllerErrorHandler(approvePayment),
   markAsPaid: controllerErrorHandler(markAsPaid),
+  reschedule: controllerErrorHandler(reschedule),
 }

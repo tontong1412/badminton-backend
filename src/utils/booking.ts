@@ -105,7 +105,7 @@ const validateBookingWindow = (startTime: string, endTime: string, options?: { s
 const getActiveBookingsForDate = async(
   courtID: string | Types.ObjectId,
   date: Date,
-  excludeBookingID?: string,
+  excludeBookingIDs?: string | string[],
 ) => {
   const query = {
     courtID,
@@ -117,11 +117,12 @@ const getActiveBookingsForDate = async(
     .sort({ startTime: 1 })
     .select({ startTime: 1, endTime: 1, status: 1 })
 
-  if (!excludeBookingID) {
+  if (!excludeBookingIDs) {
     return bookings
   }
 
-  return bookings.filter((booking) => booking.id !== excludeBookingID)
+  const excludeSet = new Set(Array.isArray(excludeBookingIDs) ? excludeBookingIDs : [excludeBookingIDs])
+  return bookings.filter((booking) => !excludeSet.has(booking.id))
 }
 
 const checkSlotAvailability = async(
@@ -129,9 +130,9 @@ const checkSlotAvailability = async(
   date: Date,
   startTime: string,
   endTime: string,
-  excludeBookingID?: string,
+  excludeBookingIDs?: string | string[],
 ): Promise<{ available: boolean; conflict?: string }> => {
-  const bookings = await getActiveBookingsForDate(courtID, date, excludeBookingID)
+  const bookings = await getActiveBookingsForDate(courtID, date, excludeBookingIDs)
   const targetStart = timeToMinutes(startTime)
   const targetEnd = timeToMinutes(endTime)
 
