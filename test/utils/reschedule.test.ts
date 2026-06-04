@@ -142,7 +142,7 @@ describe('Reschedule Controller', () => {
   })
 
   describe('Authentication', () => {
-    it('should return 401 if user is not authenticated', async () => {
+    it('should return 401 if user is not authenticated', async() => {
       vi.mocked(requestUserUtils.getOptionalUser).mockReturnValue(null)
       await reschedule(mockReq, mockRes)
       expect(mockRes.status).toHaveBeenCalledWith(401)
@@ -151,7 +151,7 @@ describe('Reschedule Controller', () => {
   })
 
   describe('Authorization', () => {
-    it('should return 403 if user is not owner or manager', async () => {
+    it('should return 403 if user is not owner or manager', async() => {
       mockCurrentUser.role = UserRole.User
       mockVenue.ownerUserID = new Types.ObjectId().toString()
       mockVenue.managerUserIDs = []
@@ -162,7 +162,7 @@ describe('Reschedule Controller', () => {
       expect(mockRes.json).toHaveBeenCalledWith({ message: 'Forbidden' })
     })
 
-    it('should allow system admin regardless of ownership', async () => {
+    it('should allow system admin regardless of ownership', async() => {
       mockCurrentUser.role = UserRole.Admin
       mockVenue.ownerUserID = new Types.ObjectId().toString()
       vi.mocked(requestUserUtils.getOptionalUser).mockReturnValue(mockCurrentUser)
@@ -171,7 +171,7 @@ describe('Reschedule Controller', () => {
       expect(mockRes.status).not.toHaveBeenCalledWith(403)
     })
 
-    it('should allow venue owner', async () => {
+    it('should allow venue owner', async() => {
       mockCurrentUser.role = UserRole.User
       mockVenue.ownerUserID = mockCurrentUser.id
       vi.mocked(requestUserUtils.getOptionalUser).mockReturnValue(mockCurrentUser)
@@ -180,7 +180,7 @@ describe('Reschedule Controller', () => {
       expect(mockRes.status).not.toHaveBeenCalledWith(403)
     })
 
-    it('should allow venue manager', async () => {
+    it('should allow venue manager', async() => {
       mockCurrentUser.role = UserRole.User
       mockVenue.ownerUserID = new Types.ObjectId().toString()
       mockVenue.managerUserIDs = [mockCurrentUser.id]
@@ -192,41 +192,41 @@ describe('Reschedule Controller', () => {
   })
 
   describe('Input Validation', () => {
-    it('should return 400 if booking not found', async () => {
+    it('should return 400 if booking not found', async() => {
       vi.mocked(BookingModel.findById).mockResolvedValue(null)
       await reschedule(mockReq, mockRes)
       expect(mockRes.status).toHaveBeenCalledWith(404)
       expect(mockRes.json).toHaveBeenCalledWith({ message: 'Booking not found' })
     })
 
-    it('should return 409 if booking is cancelled', async () => {
+    it('should return 409 if booking is cancelled', async() => {
       mockBooking.status = BookingStatus.Cancelled
       await reschedule(mockReq, mockRes)
       expect(mockRes.status).toHaveBeenCalledWith(409)
       expect(mockRes.json).toHaveBeenCalledWith({ message: 'Cannot reschedule a cancelled booking.' })
     })
 
-    it('should return 404 if source court not found', async () => {
+    it('should return 404 if source court not found', async() => {
       vi.mocked(CourtModel.findById).mockResolvedValueOnce(null)
       await reschedule(mockReq, mockRes)
       expect(mockRes.status).toHaveBeenCalledWith(404)
       expect(mockRes.json).toHaveBeenCalledWith({ message: 'Source court not found' })
     })
 
-    it('should return 400 if startTime or endTime missing', async () => {
+    it('should return 400 if startTime or endTime missing', async() => {
       mockReq.body.startTime = undefined
       await reschedule(mockReq, mockRes)
       expect(mockRes.status).toHaveBeenCalledWith(400)
       expect(mockRes.json).toHaveBeenCalledWith({ message: 'startTime and endTime are required.' })
     })
 
-    it('should return 404 if target court not found', async () => {
+    it('should return 404 if target court not found', async() => {
       vi.mocked(CourtModel.findById).mockResolvedValueOnce(mockCourt).mockResolvedValueOnce(null)
       await reschedule(mockReq, mockRes)
       expect(mockRes.status).toHaveBeenCalledWith(404)
     })
 
-    it('should return 404 if target venue not found', async () => {
+    it('should return 404 if target venue not found', async() => {
       vi.mocked(VenueModel.findById).mockResolvedValue(null)
       await reschedule(mockReq, mockRes)
       expect(mockRes.status).toHaveBeenCalledWith(404)
@@ -235,9 +235,9 @@ describe('Reschedule Controller', () => {
   })
 
   describe('Swap Mode', () => {
-    it('should swap two bookings of equal duration', async () => {
+    it('should swap two bookings of equal duration', async() => {
       mockReq.body.swapWithBookingID = mockSwapTarget.id.toString()
-      
+
       // Save original values
       const origBookingCourt = mockBooking.courtID
       const origBookingDate = mockBooking.date
@@ -247,7 +247,7 @@ describe('Reschedule Controller', () => {
       const origTargetDate = mockSwapTarget.date
       const origTargetStart = mockSwapTarget.startTime
       const origTargetEnd = mockSwapTarget.endTime
-      
+
       vi.mocked(BookingModel.findById)
         .mockResolvedValueOnce(mockBooking)
         .mockResolvedValueOnce(mockSwapTarget)
@@ -270,7 +270,7 @@ describe('Reschedule Controller', () => {
       expect(mockRes.json).toHaveBeenCalled()
     })
 
-    it('should return 404 if swap target not found', async () => {
+    it('should return 404 if swap target not found', async() => {
       mockReq.body.swapWithBookingID = new Types.ObjectId().toString()
       vi.mocked(BookingModel.findById)
         .mockResolvedValueOnce(mockBooking)
@@ -281,7 +281,7 @@ describe('Reschedule Controller', () => {
       expect(mockRes.json).toHaveBeenCalledWith({ message: 'Swap target booking not found.' })
     })
 
-    it('should return 400 if swap target has different duration', async () => {
+    it('should return 400 if swap target has different duration', async() => {
       mockSwapTarget.durationMinutes = 90
       mockReq.body.swapWithBookingID = mockSwapTarget.id.toString()
       vi.mocked(BookingModel.findById)
@@ -293,7 +293,7 @@ describe('Reschedule Controller', () => {
       expect(mockRes.json).toHaveBeenCalledWith({ message: 'Can only swap bookings with equal duration.' })
     })
 
-    it('should return 404 if swap target is cancelled', async () => {
+    it('should return 404 if swap target is cancelled', async() => {
       mockSwapTarget.status = BookingStatus.Cancelled
       mockReq.body.swapWithBookingID = mockSwapTarget.id.toString()
       vi.mocked(BookingModel.findById)
@@ -306,21 +306,21 @@ describe('Reschedule Controller', () => {
   })
 
   describe('Single Booking Move', () => {
-    it('should return 400 if duration changes', async () => {
+    it('should return 400 if duration changes', async() => {
       vi.mocked(bookingUtils.calculateDurationMinutes).mockReturnValue(90)
       await reschedule(mockReq, mockRes)
       expect(mockRes.status).toHaveBeenCalledWith(400)
       expect(mockRes.json).toHaveBeenCalledWith({ message: 'Duration cannot be changed when moving a booking.' })
     })
 
-    it('should return 400 if venue is closed on target date', async () => {
+    it('should return 400 if venue is closed on target date', async() => {
       vi.mocked(bookingUtils.getVenueScheduleForDate).mockReturnValue(null)
       await reschedule(mockReq, mockRes)
       expect(mockRes.status).toHaveBeenCalledWith(400)
       expect(mockRes.json).toHaveBeenCalledWith({ message: 'Venue is closed on the selected date.' })
     })
 
-    it('should return 400 if booking outside venue hours', async () => {
+    it('should return 400 if booking outside venue hours', async() => {
       mockReq.body.startTime = '08:00'
       mockReq.body.endTime = '09:00'
       vi.mocked(bookingUtils.timeToMinutes).mockImplementation((time) => {
@@ -339,14 +339,14 @@ describe('Reschedule Controller', () => {
       expect(mockRes.status).toHaveBeenCalledWith(400)
     })
 
-    it('should return 409 if target slot is unavailable', async () => {
+    it('should return 409 if target slot is unavailable', async() => {
       vi.mocked(bookingUtils.checkSlotAvailability).mockResolvedValue({ available: false, conflict: '12:00-13:00' })
       await reschedule(mockReq, mockRes)
       expect(mockRes.status).toHaveBeenCalledWith(409)
       expect(mockRes.json).toHaveBeenCalledWith({ message: 'Target slot is already booked.' })
     })
 
-    it('should successfully move a single booking', async () => {
+    it('should successfully move a single booking', async() => {
       vi.mocked(bookingUtils.checkSlotAvailability).mockResolvedValue({ available: true })
       await reschedule(mockReq, mockRes)
 
@@ -361,14 +361,14 @@ describe('Reschedule Controller', () => {
       mockReq.body.applyToBundle = true
     })
 
-    it('should return 404 if bundle has no bookings', async () => {
+    it('should return 404 if bundle has no bookings', async() => {
       vi.mocked(BookingModel.find).mockResolvedValue([])
       await reschedule(mockReq, mockRes)
       expect(mockRes.status).toHaveBeenCalledWith(404)
       expect(mockRes.json).toHaveBeenCalledWith({ message: 'Booking bundle not found' })
     })
 
-    it('should return 400 if bundle move results in invalid time range', async () => {
+    it('should return 400 if bundle move results in invalid time range', async() => {
       const bundleBooking = { ...mockBooking, startTime: '23:00', endTime: '23:30' }
       vi.mocked(BookingModel.find).mockResolvedValue([bundleBooking])
       vi.mocked(bookingUtils.timeToMinutes).mockImplementation((time) => {
@@ -384,7 +384,7 @@ describe('Reschedule Controller', () => {
       expect(mockRes.json).toHaveBeenCalledWith({ message: 'Bundle move results in invalid time range.' })
     })
 
-    it('should validate bundle before saving', async () => {
+    it('should validate bundle before saving', async() => {
       const bundleBooking2 = {
         ...mockBooking,
         id: new Types.ObjectId(),
