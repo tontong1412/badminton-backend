@@ -12,6 +12,7 @@ interface RescheduleBookingPayload {
   startTime?: string;
   endTime?: string;
   applyToBundle?: boolean;
+  swapWithBookingID?: string;
 }
 
 function toScheduleSource(venue: { weeklySchedule?: unknown; holidays?: unknown }) {
@@ -76,6 +77,47 @@ const reschedule = async(
   const isManager = targetVenue.managerUserIDs.some((id) => id.toString() === currentUser.id.toString())
   if (!isSystemAdmin && !isOwner && !isManager) {
     res.status(403).json({ message: 'Forbidden' })
+    return
+  }
+
+  // ── Swap mode ─────────────────────────────────────────────────────────────
+  if (req.body.swapWithBookingID) {
+    const swapTarget = await BookingModel.findById(req.body.swapWithBookingID)
+    if (!swapTarget || swapTarget.status === BookingStatus.Cancelled) {
+      res.status(404).json({ message: 'Swap target booking not found.' })
+      return
+    }
+
+    if (swapTarget.durationMinutes !== booking.durationMinutes) {
+      res.status(400).json({ message: 'Can only swap bookings with equal duration.' })
+      return
+    }
+
+    // Save originals before mutating
+    const origCourtID = booking.courtID
+    const origDate = booking.date
+    const origStart = booking.startTime
+    const origEnd = booking.endTime
+
+    const swapCourtID = swapTarget.courtID
+    const swapDate = swapTarget.date
+    const swapStart = swapTarget.startTime
+    const swapEnd = swapTarget.endTime
+
+    booking.courtID = swapCourtID
+    booking.date = swapDate
+    booking.startTime = swapStart
+    booking.endTime = swapEnd
+
+    swapTarget.courtID = origCourtID
+    swapTarget.date = origDate
+    swapTarget.startTime = origStart
+    swapTarget.endTime = origEnd
+
+    await booking.save()
+    await swapTarget.save()
+
+    res.json(booking)
     return
   }
 
