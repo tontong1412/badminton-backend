@@ -226,7 +226,7 @@ const createMatches =  async(
       })
     }
 
-    if(event.format === EventFormat.GroupPlayoffConsolation){
+    if((event.format as string)?.toLowerCase() === EventFormat.GroupPlayoffConsolation.toLowerCase()){
       if(!event.draw.consolation || event.draw.consolation?.length < 2){
         console.error('not enough team for consolation')
         return
