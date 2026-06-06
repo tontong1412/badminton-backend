@@ -1,34 +1,25 @@
 import { Request, Response } from 'express'
-import { ErrorResponse,  EventFormat, Match, MatchStatus, MatchTeam, NewMatch, NonSensitivePlayer, ResponseLocals, Team, TournamentMatchStep } from '../../type'
+import { ErrorResponse,  Event, EventFormat, Match, MatchStatus, MatchTeam, NewMatch, NonSensitivePlayer, ResponseLocals, Team, TournamentMatchStep } from '../../type'
 import EventModel from '../../schema/event'
 import MatchModel from '../../schema/match'
+import TournamentModel from '../../schema/tournament'
 import { Types } from 'mongoose'
 
 interface CreateMatchesPayload {
-  eventID: string;
+  eventID?: string;
+  tournamentID?: string;
 }
 
-const createMatches =  async(
-  req: Request<unknown, unknown, CreateMatchesPayload, unknown>,
-  res: Response<Match[] | ErrorResponse, ResponseLocals>) => {
-  const { user }: ResponseLocals = res.locals as ResponseLocals
-  const { eventID } = req.body
+const findEventsByTournament = async(tournamentID: string): Promise<Event[]> => {
+  return EventModel.find({ 'tournament.id': tournamentID }).lean<Event[]>().exec()
+}
 
-  const event = await EventModel.findById(eventID)
-  if(!event || !event?.tournament.managers?.map((m) => m.id?.toString()).includes(user.playerID.toString())){
-    res.status(401).send({ message: 'Unauthorized' })
-    return
-  }
-
-  await MatchModel.deleteMany({ 'event.id': eventID })
-
+const buildMatchesForEvent = (event: Event): NewMatch[] => {
   const matchToCreate: NewMatch[] = []
-
 
   if(event.format === EventFormat.SingleElimination){
     if(!event.draw.elimination || event.draw.elimination?.length < 2){
-      console.error('not enough team')
-      return
+      return matchToCreate
     }
     const totalRound = Math.ceil(Math.log2(event.draw.elimination.length))
     const tempElimTeam:(Team | null | string)[] = [...event.draw.elimination]
@@ -71,7 +62,7 @@ const createMatches =  async(
           }
           matchToCreate.push({
             event: {
-              id: event.id as Types.ObjectId,
+              id: event.id,
               name: event.name,
               fee: event.fee,
             },
@@ -96,8 +87,6 @@ const createMatches =  async(
       })
     }
   } else {
-    let maxRoundOnFirstStage = 0
-
     event.draw?.group?.forEach((groupObj, groupIndex) => {
       const tempGroupObj: (Team | null)[] = [...groupObj]
 
@@ -105,9 +94,6 @@ const createMatches =  async(
         tempGroupObj.unshift(null)
       }
       const totalRound = tempGroupObj.length - 1
-      if(maxRoundOnFirstStage < totalRound){
-        maxRoundOnFirstStage = totalRound
-      }
 
       const standTeam = tempGroupObj[0]
       const roundRobinTeam = tempGroupObj.slice(1, tempGroupObj.length)
@@ -116,7 +102,7 @@ const createMatches =  async(
         if(standTeam){
           matchToCreate.push({
             event: {
-              id: event.id as Types.ObjectId,
+              id: event.id,
               name: event.name,
               fee: event.fee,
             },
@@ -152,7 +138,7 @@ const createMatches =  async(
         for (let j = 0; j < (roundRobinTeam.length - 1) / 2; j++) {
           matchToCreate.push({
             event: {
-              id: event.id as Types.ObjectId,
+              id: event.id,
               name: event.name,
               fee: event.fee,
             },
@@ -192,8 +178,7 @@ const createMatches =  async(
     })
 
     if(!event.draw.ko || event.draw.ko?.length < 2){
-      console.error('not enough team')
-      return
+      return matchToCreate
     }
     const totalRound = Math.log2(event.draw.ko?.length)
     const tempKOTeam:(Team | null | string)[] = [...event.draw.ko]
@@ -205,7 +190,7 @@ const createMatches =  async(
         if (index % 2 === 1) {
           matchToCreate.push({
             event: {
-              id: event.id as Types.ObjectId,
+              id: event.id,
               name: event.name,
               fee: event.fee,
             },
@@ -226,10 +211,9 @@ const createMatches =  async(
       })
     }
 
-    if(event.format === EventFormat.GroupPlayoffConsolation){
+    if((event.format as string)?.toLowerCase() === EventFormat.GroupPlayoffConsolation.toLowerCase()){
       if(!event.draw.consolation || event.draw.consolation?.length < 2){
-        console.error('not enough team for consolation')
-        return
+        return matchToCreate
       }
       const totalRound = Math.log2(event.draw.consolation?.length)
       const tempConsolationTeam:(Team | null | string)[] = [...event.draw.consolation]
@@ -241,7 +225,7 @@ const createMatches =  async(
           if (index % 2 === 1) {
             matchToCreate.push({
               event: {
-                id: event.id as Types.ObjectId,
+                id: event.id,
                 name: event.name,
                 fee: event.fee,
               },
@@ -264,10 +248,60 @@ const createMatches =  async(
     }
   }
 
-  const result = await MatchModel.insertMany(matchToCreate)
-  res.send(result as Match[])
-  return
+  return matchToCreate
+}
 
+const createMatches =  async(
+  req: Request<unknown, unknown, CreateMatchesPayload, unknown>,
+  res: Response<Match[] | ErrorResponse, ResponseLocals>) => {
+  const { user }: ResponseLocals = res.locals as ResponseLocals
+  const { eventID, tournamentID } = req.body
+
+  if(!eventID && !tournamentID){
+    res.status(400).send({ message: 'eventID or tournamentID is required' })
+    return
+  }
+
+  let events: Event[] = []
+
+  if(tournamentID){
+    const tournament = await TournamentModel.findById(tournamentID)
+    if(!tournament){
+      res.status(404).send({ message: 'Tournament not found' })
+      return
+    }
+
+    const playerID = user.playerID.toString()
+    const isCreator = tournament.creator?.id?.toString() === playerID
+    const isManager = tournament.managers?.map((m) => m.id?.toString()).includes(playerID)
+    if(!isCreator && !isManager){
+      res.status(401).send({ message: 'Unauthorized' })
+      return
+    }
+
+    events = await findEventsByTournament(tournamentID)
+  } else {
+    const event = await EventModel.findById(eventID).lean<Event | null>()
+    if(!event || !event?.tournament.managers?.map((m) => m.id?.toString()).includes(user.playerID.toString())){
+      res.status(401).send({ message: 'Unauthorized' })
+      return
+    }
+    events = [event]
+  }
+
+  const result: Match[] = []
+  for(const event of events){
+    await MatchModel.deleteMany({ 'event.id': event.id })
+    const matchToCreate = buildMatchesForEvent(event)
+    if(matchToCreate.length < 1){
+      continue
+    }
+    const createdMatches = await MatchModel.insertMany(matchToCreate)
+    result.push(...(createdMatches as Match[]))
+  }
+
+  res.send(result)
+  return
 }
 
 export default createMatches

@@ -10,6 +10,7 @@ interface UpdateManyMatchBody {
   matches: {
     id: string,
     date: string,
+    court?: string,
   }[]
 }
 
@@ -37,7 +38,7 @@ const scheduleMatches =  async(
   const operations = matches.map((update) => ({
     updateOne: {
       filter: { _id: update.id }, // Filter for the specific document
-      update: { $set: { date: new Date(update.date) } } // Update with the specific value
+      update: { $set: { date: new Date(update.date), court: update.court } } // Update with the specific value
     }
   }))
 

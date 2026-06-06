@@ -19,13 +19,11 @@ const getTournaments = async(
     }
     sort = { endDate: -1 }
     limit = 10
-  } else if(tab === TournamentQuery.ThisWeek){
-    const startOfWeek = moment().startOf('isoWeek').toDate()
-    const endOfWeek = moment().endOf('isoWeek').toDate()
+  } else if(tab === TournamentQuery.UpComing){
     queryOptions = {
+      status: TournamentStatus.RegistrationClose,
       startDate: {
-        $gte: startOfWeek,
-        $lte: endOfWeek,
+        $gte: moment().toDate()
       }
     }
     sort = { startDate: 1 }
