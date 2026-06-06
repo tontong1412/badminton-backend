@@ -8,7 +8,7 @@ const getMatches = async(
   res: Response
 ) => {
   const { eventID, tournamentID, status } = req.query
-  const queryParams: Record<string, any> = {}
+  const queryParams: Record<string, unknown> = {}
 
   if(eventID){
     queryParams['event.id'] = new Types.ObjectId(eventID as string)
