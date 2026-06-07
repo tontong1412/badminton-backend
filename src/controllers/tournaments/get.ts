@@ -1,4 +1,3 @@
-import moment from 'moment'
 import { Request, Response } from 'express'
 import TournamentModel from '../../schema/tournament'
 import { TournamentQuery, TournamentStatus } from '../../type'
@@ -19,11 +18,14 @@ const getTournaments = async(
     }
     sort = { endDate: -1 }
     limit = 10
-  } else if(tab === TournamentQuery.UpComing){
+  } else if(tab === 'upComing'){
     queryOptions = {
-      status: TournamentStatus.RegistrationClose,
-      startDate: {
-        $gte: moment().toDate()
+      status: {
+        $nin: [
+          TournamentStatus.Preparation,
+          TournamentStatus.RegistrationOpen,
+          TournamentStatus.Finished
+        ]
       }
     }
     sort = { startDate: 1 }
