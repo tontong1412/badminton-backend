@@ -10,11 +10,11 @@ interface CreateMatchesPayload {
   tournamentID?: string;
 }
 
-const findEventsByTournament = async(tournamentID: string): Promise<Event[]> => {
-  return EventModel.find({ 'tournament.id': tournamentID }).lean<Event[]>().exec()
+const findEventsByTournament = async(tournamentID: string): Promise<(Event & { _id: Types.ObjectId })[]> => {
+  return EventModel.find({ 'tournament.id': new Types.ObjectId(tournamentID) }).lean<(Event & { _id: Types.ObjectId })[]>().exec()
 }
 
-const buildMatchesForEvent = (event: Event): NewMatch[] => {
+const buildMatchesForEvent = (event: Event & { _id: Types.ObjectId }): NewMatch[] => {
   const matchToCreate: NewMatch[] = []
 
   if(event.format === EventFormat.SingleElimination){
@@ -62,7 +62,7 @@ const buildMatchesForEvent = (event: Event): NewMatch[] => {
           }
           matchToCreate.push({
             event: {
-              id: event.id,
+              id: event._id,
               name: event.name,
               fee: event.fee,
             },
@@ -102,7 +102,7 @@ const buildMatchesForEvent = (event: Event): NewMatch[] => {
         if(standTeam){
           matchToCreate.push({
             event: {
-              id: event.id,
+              id: event._id,
               name: event.name,
               fee: event.fee,
             },
@@ -138,7 +138,7 @@ const buildMatchesForEvent = (event: Event): NewMatch[] => {
         for (let j = 0; j < (roundRobinTeam.length - 1) / 2; j++) {
           matchToCreate.push({
             event: {
-              id: event.id,
+              id: event._id,
               name: event.name,
               fee: event.fee,
             },
@@ -190,7 +190,7 @@ const buildMatchesForEvent = (event: Event): NewMatch[] => {
         if (index % 2 === 1) {
           matchToCreate.push({
             event: {
-              id: event.id,
+              id: event._id,
               name: event.name,
               fee: event.fee,
             },
@@ -225,7 +225,7 @@ const buildMatchesForEvent = (event: Event): NewMatch[] => {
           if (index % 2 === 1) {
             matchToCreate.push({
               event: {
-                id: event.id,
+                id: event._id,
                 name: event.name,
                 fee: event.fee,
               },
@@ -262,7 +262,7 @@ const createMatches =  async(
     return
   }
 
-  let events: Event[] = []
+  let events: (Event & { _id: Types.ObjectId })[] = []
 
   if(tournamentID){
     const tournament = await TournamentModel.findById(tournamentID)
@@ -281,7 +281,7 @@ const createMatches =  async(
 
     events = await findEventsByTournament(tournamentID)
   } else {
-    const event = await EventModel.findById(eventID).lean<Event | null>()
+    const event = await EventModel.findById(eventID).lean<(Event & { _id: Types.ObjectId }) | null>()
     if(!event || !event?.tournament.managers?.map((m) => m.id?.toString()).includes(user.playerID.toString())){
       res.status(401).send({ message: 'Unauthorized' })
       return
@@ -291,7 +291,7 @@ const createMatches =  async(
 
   const result: Match[] = []
   for(const event of events){
-    await MatchModel.deleteMany({ 'event.id': event.id })
+    await MatchModel.deleteMany({ 'event.id': event._id })
     const matchToCreate = buildMatchesForEvent(event)
     if(matchToCreate.length < 1){
       continue

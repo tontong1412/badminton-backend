@@ -1,33 +1,28 @@
 import { Request, Response } from 'express'
 import MatchModel from '../../schema/match'
 import TournamentModel from '../../schema/tournament'
+import { Types } from 'mongoose'
 
 const getMatches = async(
   req: Request,
   res: Response
 ) => {
-  const { eventID, tournamentID } = req.query
-  let queryParams = {
-    ...req.query,
-  }
+  const { eventID, tournamentID, status } = req.query
+  const queryParams: Record<string, unknown> = {}
+
   if(eventID){
-    queryParams = {
-      ...queryParams,
-      'event.id': eventID
-    }
-    delete queryParams.eventID
+    queryParams['event.id'] = new Types.ObjectId(eventID as string)
   }
 
   if(tournamentID){
     const tournament = await TournamentModel.findById(tournamentID).select({ events: 1 }).lean()
-    const eventIDs = tournament?.events.map((e) => e.id.toString()) || []
-    queryParams = {
-      ...queryParams,
-      'event.id': { $in: eventIDs }
-    }
-    delete queryParams.tournamentID
+    const eventIDs = tournament?.events.map((e) => e.id) || []
+    queryParams['event.id'] = { $in: eventIDs }
   }
 
+  if(status){
+    queryParams['status'] = status
+  }
 
   const matches = await MatchModel.find(queryParams).sort({
     step:1,
