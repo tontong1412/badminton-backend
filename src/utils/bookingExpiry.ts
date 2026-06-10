@@ -1,11 +1,17 @@
 import BookingModel from '../schema/booking'
 import ResaleListingModel from '../schema/resaleListing'
 import { BookingStatus, ResaleOutcome, ResaleStatus } from '../type'
+import mongoose from 'mongoose'
 
 const EXPIRY_MINUTES = 10
 const POLL_INTERVAL_MS = 60_000 // run every minute
 
 async function cancelExpiredBookings(): Promise<void> {
+  // Avoid startup race: this job can be scheduled before MongoDB is connected.
+  if (mongoose.connection.readyState !== 1) {
+    return
+  }
+
   const cutoff = new Date(Date.now() - EXPIRY_MINUTES * 60 * 1000)
 
   try {
