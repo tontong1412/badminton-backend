@@ -48,7 +48,8 @@ const register = async(
       player.photo = url
     }
 
-    const existingPlayer = await PlayerModel.findByIdAndUpdate(player.id, player, { new:true })
+    const { officialName: _officialName, id: _id, ...safePlayerFields } = player
+    const existingPlayer = await PlayerModel.findByIdAndUpdate(player.id, { $set: safePlayerFields }, { new:true })
     if(!existingPlayer){ throw new Error('Player doesn\'t exist') }
     const nonSensitiveExistPlayer = {
       id: existingPlayer._id,
@@ -93,7 +94,7 @@ const register = async(
     return
   }
 
-  const contactPerson = await PlayerModel.findByIdAndUpdate(req.body.contactPerson.id, req.body.contactPerson, { new:true })
+  const contactPerson = await PlayerModel.findByIdAndUpdate(req.body.contactPerson.id, { $set: { contact: req.body.contactPerson.contact } }, { new:true })
   if(!contactPerson) {
     res.status(404).json({ message: 'Contact person not found' })
     return

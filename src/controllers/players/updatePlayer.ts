@@ -22,6 +22,8 @@ const updatePlayer = async(
       return
     }
 
+    await playerService.propagatePlayerUpdate(user.playerID.toString(), updatedPlayer)
+
     res.status(200).json(updatedPlayer)
     return
 

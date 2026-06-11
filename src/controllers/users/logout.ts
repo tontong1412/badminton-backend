@@ -1,14 +1,12 @@
-import { Request, Response } from 'express'
+import { Response } from 'express'
 import tokenUtils from '../../utils/token'
 import config from '../../config'
-
-interface LogoutBody {
-  userId: string
-}
+import { RequestWithCookies, TokenPayload } from '../../type'
 
 const logout = async(
-  req: Request<null, null, LogoutBody>,
+  _req: RequestWithCookies,
   res: Response) => {
+  const user = res.locals.user as TokenPayload
   res.clearCookie('refresh', {
     httpOnly: true,
     secure: config.NODE_ENV === 'production',
@@ -19,7 +17,7 @@ const logout = async(
     secure: config.NODE_ENV === 'production',
     sameSite: config.NODE_ENV === 'production' ? 'none' : 'strict'
   })
-  await tokenUtils.deleteRefreshToken(req.body.userId)
+  await tokenUtils.deleteRefreshToken(user.id.toString())
   res.json({ message: 'Logged out' })
 }
 export default logout
