@@ -8,7 +8,7 @@ const POLL_INTERVAL_MS = 60_000 // run every minute
 
 async function cancelExpiredBookings(): Promise<void> {
   // Avoid startup race: this job can be scheduled before MongoDB is connected.
-  if (mongoose.connection.readyState !== 1) {
+  if (mongoose.connection.readyState !== mongoose.ConnectionStates.connected) {
     return
   }
 
