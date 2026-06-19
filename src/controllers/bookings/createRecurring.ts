@@ -129,6 +129,7 @@ const createRecurring = async(
     totalPrice: bookingUtils.calculateTotalPriceWithRules(court, req.body.startTime, req.body.endTime),
     currency: court.currency,
     bookerType: 'user',
+    createdByUserID: res.locals.user.id,
     userID: res.locals.user.id,
     bookingType: BookingType.Recurring,
     recurringGroupID: recurringGroup._id,

@@ -14,7 +14,8 @@ export interface BookingDocument extends Document {
   durationMinutes: number;
   totalPrice: number;
   currency: string;
-  bookerType: 'guest' | 'user';
+  bookerType: 'guest' | 'user' | 'admin';
+  createdByUserID?: Types.ObjectId;
   userID?: Types.ObjectId;
   guestName?: string;
   guestPhone?: string;
@@ -54,8 +55,12 @@ const bookingSchema = new Schema<BookingDocument>({
   currency: { type: String, required: true, trim: true },
   bookerType: {
     type: String,
-    enum: ['guest', 'user'],
+    enum: ['guest', 'user', 'admin'],
     required: true,
+  },
+  createdByUserID: {
+    type: Schema.Types.ObjectId,
+    ref: constants.DATABASE.COLLECTION.USER,
   },
   userID: {
     type: Schema.Types.ObjectId,
@@ -110,6 +115,20 @@ const bookingSchema = new Schema<BookingDocument>({
   note: String,
 }, {
   timestamps: { createdAt: true, updatedAt: true },
+})
+
+bookingSchema.pre('validate', function(next) {
+  const shouldValidateUserIdentity = this.isNew || this.isModified('bookerType') || this.isModified('userID')
+  if (!shouldValidateUserIdentity) {
+    next()
+    return
+  }
+
+  if (this.bookerType === 'user' && !this.userID) {
+    this.invalidate('userID', 'userID is required when bookerType is user')
+  }
+
+  next()
 })
 
 bookingSchema.virtual('id').get(function(this: BookingDocument): string {
