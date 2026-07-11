@@ -211,7 +211,8 @@ export interface Booking {
   durationMinutes: number;
   totalPrice: number;
   currency: string;
-  bookerType: 'guest' | 'user';
+  bookerType: 'guest' | 'user' | 'admin';
+  createdByUserID?: Types.ObjectId;
   userID?: Types.ObjectId;
   guestName?: string;
   guestPhone?: string;
