@@ -6,6 +6,7 @@ const router = express.Router()
 
 router.get('/', middlewares.auth, bookingController.get)
 router.get('/venue-admin', middlewares.auth, bookingController.getVenueBookings)
+router.get('/venue-admin/analytics', middlewares.auth, bookingController.getVenueAnalytics)
 router.get('/bundles/:bookingBundleID', bookingController.getBundle)
 router.get('/:id', bookingController.getById)
 router.post('/', bookingController.createSingle)
