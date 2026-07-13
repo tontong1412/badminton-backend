@@ -1,4 +1,4 @@
-/* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-argument, @typescript-eslint/unbound-method */
+/* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-argument, @typescript-eslint/unbound-method */
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import getVenueAnalytics from '../../src/controllers/bookings/getVenueAnalytics'
 import BookingModel from '../../src/schema/booking'
@@ -134,7 +134,7 @@ describe('getVenueAnalytics controller', () => {
     expect(mockRes.status).not.toHaveBeenCalledWith(401)
     expect(mockRes.status).not.toHaveBeenCalledWith(403)
 
-    const payload = mockRes.json.mock.calls[0][0] as any
+    const payload = mockRes.json.mock.calls[0][0]
     expect(payload.summary.paidRevenue).toBe(800)
     expect(payload.summary.pendingRevenue).toBe(400)
     expect(payload.summary.unpaidRevenue).toBe(0)
