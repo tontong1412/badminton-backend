@@ -11,9 +11,19 @@ const getListings = async(req: Request, res: Response): Promise<void> => {
       return false
     }
 
-    const booking = listing.bookingID as { courtID?: string; date?: Date }
-    if (booking?.date && booking.date < new Date()) {
-      return false
+    const booking = listing.bookingID as { courtID?: string; date?: Date; endTime?: string }
+    if (booking?.date) {
+      const effectiveEndTime = listing.subEndTime ?? booking.endTime
+      if (effectiveEndTime) {
+        const [hours, minutes] = effectiveEndTime.split(':').map(Number)
+        const slotEnd = new Date(booking.date)
+        slotEnd.setHours(hours, minutes, 0, 0)
+        if (slotEnd <= new Date()) {
+          return false
+        }
+      } else if (booking.date < new Date()) {
+        return false
+      }
     }
 
     if (typeof req.query.courtID === 'string' && booking?.courtID?.toString() !== req.query.courtID) {
