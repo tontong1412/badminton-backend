@@ -11,6 +11,17 @@ export enum UserRole {
   Admin = 'admin',
 }
 
+export enum FavoriteItemType {
+  Venue = 'venue',
+  Tournament = 'tournament',
+}
+
+export interface FavoriteItem {
+  itemType: FavoriteItemType;
+  itemID: string;
+  addedAt: Date;
+}
+
 export interface Player {
   id: Types.ObjectId;
   userID?: Types.ObjectId;
@@ -42,6 +53,7 @@ export interface Player {
     accountNumber?: string;
     promptPayID?: string;
   }
+  favorites?: FavoriteItem[];
 }
 
 export type NewPlayer = Omit<Player, 'id'>;
@@ -137,16 +149,10 @@ export interface HolidaySchedule {
   closeTime?: string;
 }
 
-export interface GapPolicy {
-  enabled: boolean;
-  minimumGapMinutes: 30 | 60;
-}
-
 export interface BookingVenue extends Venue {
   weeklySchedule: Record<string, DailySchedule | null>;
   holidays: HolidaySchedule[];
   slotDurationMinutes: number;
-  gapPolicy: GapPolicy;
   ownerUserID: Types.ObjectId;
 }
 

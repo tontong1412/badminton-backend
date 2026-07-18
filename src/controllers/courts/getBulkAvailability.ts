@@ -4,7 +4,7 @@ import BookingModel from '../../schema/booking'
 import CourtModel from '../../schema/court'
 import VenueModel, { VenueDocument } from '../../schema/venue'
 import bookingUtils from '../../utils/booking'
-import { BookingStatus, GapPolicy } from '../../type'
+import { BookingStatus } from '../../type'
 import { getCachedVenue, setCachedVenue, getCachedCourts, setCachedCourts, CourtLean } from '../../utils/venueCache'
 
 // Pure in-memory check — no DB queries
@@ -21,38 +21,6 @@ const checkSlotInMemory = (
     return targetStart < bEnd && targetEnd > bStart
   })
   return conflict ? { available: false, conflict: `${conflict.startTime}-${conflict.endTime}` } : { available: true }
-}
-
-const validateGapInMemory = (
-  bookings: { startTime: string; endTime: string }[],
-  startTime: string,
-  endTime: string,
-  gapPolicy: GapPolicy,
-  openTime: string,
-  closeTime: string,
-): { valid: boolean; reason?: string } => {
-  if (!gapPolicy.enabled) return { valid: true }
-
-  const intervals = [
-    ...bookings.map((b) => ({ start: bookingUtils.timeToMinutes(b.startTime), end: bookingUtils.timeToMinutes(b.endTime) })),
-    { start: bookingUtils.timeToMinutes(startTime), end: bookingUtils.timeToMinutes(endTime) },
-  ].sort((a, b) => a.start - b.start)
-
-  let prev = bookingUtils.timeToMinutes(openTime)
-  for (const interval of intervals) {
-    const gap = interval.start - prev
-    if (gap > 0 && gap < gapPolicy.minimumGapMinutes) {
-      return { valid: false, reason: `Booking leaves a ${gap}-minute gap, below the venue minimum of ${gapPolicy.minimumGapMinutes} minutes.` }
-    }
-    prev = interval.end
-  }
-
-  const finalGap = bookingUtils.timeToMinutes(closeTime) - prev
-  if (finalGap > 0 && finalGap < gapPolicy.minimumGapMinutes) {
-    return { valid: false, reason: `Booking leaves a ${finalGap}-minute gap before closing, below the venue minimum of ${gapPolicy.minimumGapMinutes} minutes.` }
-  }
-
-  return { valid: true }
 }
 
 const getBulkAvailability = async(req: Request, res: Response): Promise<void> => {
@@ -168,8 +136,7 @@ const getBulkAvailability = async(req: Request, res: Response): Promise<void> =>
       if (!availability.available) {
         return { startTime, endTime, available: false, reason: `Conflicts with booking ${availability.conflict}` }
       }
-      const gapValidation = validateGapInMemory(courtBookings, startTime, endTime, venue.gapPolicy, schedule.open, schedule.close)
-      return { startTime, endTime, available: gapValidation.valid, reason: gapValidation.reason }
+      return { startTime, endTime, available: true }
     })
 
     return { courtId, result: { date, durationMinutes: requestedDuration, court, slots } }

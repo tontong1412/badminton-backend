@@ -41,12 +41,15 @@ const getBundle = async(
   }
 
   // Fetch court and venue info for enriched response
-  const court = await CourtModel.findById(firstBooking.courtID)
+  const courtIDs = Array.from(new Set(bookings.map((booking) => String(booking.courtID))))
+  const courts = await CourtModel.find({ _id: { $in: courtIDs } })
+  const court = courts[0] ?? null
   const venue = court ? await VenueModel.findById(court.venueID) : null
 
   res.json({
     bookings,
     venue,
+    courts,
     court,
   })
 }

@@ -146,22 +146,6 @@ const createSingle = async(
       return
     }
 
-    if (!isVenueAdmin) {
-      const gapValidation = await bookingUtils.validateBookingGap(
-        court.id as string,
-        bookingDate,
-        item.startTime,
-        item.endTime,
-        venue.gapPolicy,
-        schedule.open,
-        schedule.close,
-      )
-      if (!gapValidation.valid) {
-        res.status(409).json({ message: gapValidation.reason })
-        return
-      }
-    }
-
     // Split the booking into 1-hour segments; each segment becomes its own booking document
     let cursor = bookingUtils.timeToMinutes(item.startTime)
     const endMinutes = bookingUtils.timeToMinutes(item.endTime)

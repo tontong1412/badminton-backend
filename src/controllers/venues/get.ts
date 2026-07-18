@@ -8,7 +8,7 @@ const get = async(req: Request, res: Response): Promise<void> => {
     query.ownerUserID = req.query.ownerUserID
   }
 
-  const venues = await VenueModel.find(query).sort({ createdAt: -1 })
+  const venues = await VenueModel.find(query).sort({ createdAt: 1 })
   res.json(venues)
 }
 

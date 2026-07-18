@@ -41,7 +41,6 @@ const getAvailability = async(req: Request<{ id: string }>, res: Response): Prom
       date,
       court,
       isClosed: true,
-      gapPolicy: venue.gapPolicy,
       slots: [],
     })
     return
@@ -64,21 +63,10 @@ const getAvailability = async(req: Request<{ id: string }>, res: Response): Prom
       }
     }
 
-    const gapValidation = await bookingUtils.validateBookingGap(
-      court.id as string,
-      new Date(date),
-      startTime,
-      endTime,
-      venue.gapPolicy,
-      schedule.open,
-      schedule.close,
-    )
-
     return {
       startTime,
       endTime,
-      available: gapValidation.valid,
-      reason: gapValidation.reason,
+      available: true,
     }
   }))
 
@@ -89,7 +77,6 @@ const getAvailability = async(req: Request<{ id: string }>, res: Response): Prom
     venue: {
       id: venue.id as string,
       name: venue.name,
-      gapPolicy: venue.gapPolicy,
       openTime: schedule.open,
       closeTime: schedule.close,
     },

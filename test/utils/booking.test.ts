@@ -15,6 +15,7 @@ const {
   validateBookingWindow,
   calculateTotalPrice,
   enumerateRecurringDates,
+  splitTimeRangeBySlot,
 } = bookingUtils
 
 // ─── timeToMinutes ────────────────────────────────────────────────────────────
@@ -281,6 +282,29 @@ describe('enumerateRecurringDates', () => {
   })
 })
 
+// ─── splitTimeRangeBySlot ───────────────────────────────────────────────────
+
+describe('splitTimeRangeBySlot', () => {
+  it('splits a 2-hour range into 2 one-hour slots', () => {
+    const slots = splitTimeRangeBySlot('20:00', '22:00', 60)
+    expect(slots).toEqual([
+      { startTime: '20:00', endTime: '21:00', durationMinutes: 60 },
+      { startTime: '21:00', endTime: '22:00', durationMinutes: 60 },
+    ])
+  })
+
+  it('splits a 2-hour range into 4 half-hour slots', () => {
+    const slots = splitTimeRangeBySlot('20:00', '22:00', 30)
+    expect(slots).toHaveLength(4)
+    expect(slots[0]).toEqual({ startTime: '20:00', endTime: '20:30', durationMinutes: 30 })
+    expect(slots[3]).toEqual({ startTime: '21:30', endTime: '22:00', durationMinutes: 30 })
+  })
+
+  it('throws when range does not align with slot duration', () => {
+    expect(() => splitTimeRangeBySlot('20:30', '22:00', 60)).toThrow(/align/)
+  })
+})
+
 // ─── checkSlotAvailability (mocked DB) ───────────────────────────────────────
 
 describe('checkSlotAvailability', () => {
@@ -327,56 +351,3 @@ describe('checkSlotAvailability', () => {
   })
 })
 
-// ─── validateBookingGap (mocked DB) ──────────────────────────────────────────
-
-describe('validateBookingGap', () => {
-  const gapPolicy = { enabled: true, minimumGapMinutes: 60 as 30 | 60 }
-  const disabledPolicy = { enabled: false, minimumGapMinutes: 60 as 30 | 60 }
-
-  beforeEach(() => {
-    vi.resetModules()
-  })
-
-  it('skips validation when gap policy disabled', async() => {
-    vi.doMock('../../src/schema/booking', () => ({
-      default: { find: vi.fn().mockReturnValue({ sort: vi.fn().mockReturnValue({ select: vi.fn().mockResolvedValue([]) }) }) },
-    }))
-    const { default: utils } = await import('../../src/utils/booking')
-    const result = await utils.validateBookingGap('c', new Date(), '09:00', '10:00', disabledPolicy, '09:00', '23:00')
-    expect(result.valid).toBe(true)
-  })
-
-  it('valid when new booking leaves 60-min gap against existing', async() => {
-    // Existing: 11:00–13:00. New: 09:00–10:00. Gap = 11:00 - 10:00 = 60 min ✓
-    const existing = [{ startTime: '11:00', endTime: '13:00', id: 'b1' }]
-    vi.doMock('../../src/schema/booking', () => ({
-      default: { find: vi.fn().mockReturnValue({ sort: vi.fn().mockReturnValue({ select: vi.fn().mockResolvedValue(existing) }) }) },
-    }))
-    const { default: utils } = await import('../../src/utils/booking')
-    const result = await utils.validateBookingGap('c', new Date(), '09:00', '10:00', gapPolicy, '09:00', '23:00')
-    expect(result.valid).toBe(true)
-  })
-
-  it('invalid when gap is below minimum', async() => {
-    // Existing: 11:00–13:00. New: 09:00–10:30. Gap = 11:00 - 10:30 = 30 min < 60 ✗
-    const existing = [{ startTime: '11:00', endTime: '13:00', id: 'b1' }]
-    vi.doMock('../../src/schema/booking', () => ({
-      default: { find: vi.fn().mockReturnValue({ sort: vi.fn().mockReturnValue({ select: vi.fn().mockResolvedValue(existing) }) }) },
-    }))
-    const { default: utils } = await import('../../src/utils/booking')
-    const result = await utils.validateBookingGap('c', new Date(), '09:00', '10:30', gapPolicy, '09:00', '23:00')
-    expect(result.valid).toBe(false)
-    expect(result.reason).toMatch(/30-minute gap/)
-  })
-
-  it('invalid when trailing gap before close is below minimum', async() => {
-    // New: 21:30–22:30. Close: 23:00. Trailing gap = 30 min < 60 ✗
-    vi.doMock('../../src/schema/booking', () => ({
-      default: { find: vi.fn().mockReturnValue({ sort: vi.fn().mockReturnValue({ select: vi.fn().mockResolvedValue([]) }) }) },
-    }))
-    const { default: utils } = await import('../../src/utils/booking')
-    const result = await utils.validateBookingGap('c', new Date(), '21:30', '22:30', gapPolicy, '09:00', '23:00')
-    expect(result.valid).toBe(false)
-    expect(result.reason).toMatch(/gap before closing/)
-  })
-})
