@@ -220,6 +220,7 @@ const createRecurring = async(
   }
 
   res.status(201).json({
+    bookingBundleID: bookingBundleID.toString(),
     recurringGroups,
     recurringGroup: recurringGroups.length === 1 ? recurringGroups[0] : undefined,
     bookings,
