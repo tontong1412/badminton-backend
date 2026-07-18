@@ -103,8 +103,8 @@ describe('createRecurring controller slot splitting', () => {
       },
     ] as any)
 
-    vi.mocked(BookingModel.insertMany).mockImplementation(async(bookings: any[]) => {
-      return bookings.map((booking, index) => ({
+    vi.mocked(BookingModel.insertMany).mockImplementation(async(bookings: unknown) => {
+      return (bookings as any[]).map((booking, index) => ({
         ...booking,
         id: new Types.ObjectId((index + 1).toString(16).padStart(24, '0')).toString(),
         toObject: () => booking,
@@ -137,8 +137,8 @@ describe('createRecurring controller slot splitting', () => {
       },
     ] as any)
 
-    vi.mocked(BookingModel.insertMany).mockImplementation(async(bookings: any[]) => {
-      return bookings.map((booking, index) => ({
+    vi.mocked(BookingModel.insertMany).mockImplementation(async(bookings: unknown) => {
+      return (bookings as any[]).map((booking, index) => ({
         ...booking,
         id: new Types.ObjectId((index + 10).toString(16).padStart(24, '0')).toString(),
         toObject: () => booking,
