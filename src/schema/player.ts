@@ -1,5 +1,5 @@
 import mongoose, { Document, Schema, Types } from 'mongoose'
-import { Gender, NewPlayer } from '../type'
+import { FavoriteItemType, Gender, NewPlayer } from '../type'
 import constants from '../constants'
 
 export interface PlayerDocument extends NewPlayer, Document {
@@ -37,6 +37,25 @@ const playerSchema = new Schema<PlayerDocument>({
     accountName: { type: String, trim: true },
     accountNumber: { type: String, trim: true },
     promptPayID: { type: String, trim: true },
+  },
+  favorites: {
+    type: [{
+      itemType: {
+        type: String,
+        enum: Object.values(FavoriteItemType),
+        required: true,
+      },
+      itemID: {
+        type: String,
+        required: true,
+        trim: true,
+      },
+      addedAt: {
+        type: Date,
+        required: true,
+      }
+    }],
+    default: [],
   },
   userID: { type: Schema.Types.ObjectId, ref: constants.DATABASE.COLLECTION.USER },
 }, {
