@@ -1,6 +1,6 @@
 import { Types } from 'mongoose'
 import BookingModel from '../schema/booking'
-import { BookingStatus, GapPolicy } from '../type'
+import { BookingStatus } from '../type'
 
 const SLOT_DURATION_MINUTES = 30
 const MIN_BOOKING_MINUTES = 60
@@ -152,54 +152,6 @@ const checkSlotAvailability = async(
   return { available: true }
 }
 
-const validateBookingGap = async(
-  courtID: string | Types.ObjectId,
-  date: Date,
-  startTime: string,
-  endTime: string,
-  gapPolicy: GapPolicy,
-  openTime: string,
-  closeTime: string,
-  excludeBookingID?: string,
-): Promise<{ valid: boolean; reason?: string }> => {
-  if (!gapPolicy.enabled) {
-    return { valid: true }
-  }
-
-  const bookings = await getActiveBookingsForDate(courtID, date, excludeBookingID)
-  const intervals = bookings.map((booking) => ({
-    start: timeToMinutes(booking.startTime),
-    end: timeToMinutes(booking.endTime),
-  }))
-
-  intervals.push({ start: timeToMinutes(startTime), end: timeToMinutes(endTime) })
-  intervals.sort((left, right) => left.start - right.start)
-
-  let previousEnd = timeToMinutes(openTime)
-  const closeBoundary = timeToMinutes(closeTime)
-
-  for (const interval of intervals) {
-    const gap = interval.start - previousEnd
-    if (gap > 0 && gap < gapPolicy.minimumGapMinutes) {
-      return {
-        valid: false,
-        reason: `Booking leaves a ${gap}-minute gap, below the venue minimum of ${gapPolicy.minimumGapMinutes} minutes.`,
-      }
-    }
-    previousEnd = interval.end
-  }
-
-  const finalGap = closeBoundary - previousEnd
-  if (finalGap > 0 && finalGap < gapPolicy.minimumGapMinutes) {
-    return {
-      valid: false,
-      reason: `Booking leaves a ${finalGap}-minute gap before closing, below the venue minimum of ${gapPolicy.minimumGapMinutes} minutes.`,
-    }
-  }
-
-  return { valid: true }
-}
-
 const calculateTotalPrice = (pricePerHour: number, durationMinutes: number): number => {
   return Number(((pricePerHour / 60) * durationMinutes).toFixed(2))
 }
@@ -316,7 +268,6 @@ export default {
   getVenueScheduleForDate,
   validateBookingWindow,
   checkSlotAvailability,
-  validateBookingGap,
   calculateTotalPrice,
   calculateTotalPriceWithRules,
   enumerateRecurringDates,

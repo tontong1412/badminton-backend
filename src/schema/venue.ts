@@ -1,5 +1,5 @@
 import mongoose, { Document, Schema, Types } from 'mongoose'
-import { DailySchedule, GapPolicy, HolidaySchedule } from '../type'
+import { DailySchedule, HolidaySchedule } from '../type'
 import constants from '../constants'
 
 export interface VenuePayment {
@@ -31,7 +31,6 @@ export interface VenueDocument extends Document {
   weeklySchedule: Record<string, DailySchedule | null>;
   holidays: HolidaySchedule[];
   slotDurationMinutes: number;
-  gapPolicy: GapPolicy;
   payment?: VenuePayment;
   slipok?: VenueSlipOK;
   coverImage?: string;
@@ -92,14 +91,6 @@ const venueSchema = new Schema<VenueDocument>({
     type: Number,
     default: 30,
     enum: [30, 60],
-  },
-  gapPolicy: {
-    enabled: { type: Boolean, default: true },
-    minimumGapMinutes: {
-      type: Number,
-      enum: [30, 60],
-      default: 60,
-    },
   },
   payment: {
     bankName: { type: String, trim: true },

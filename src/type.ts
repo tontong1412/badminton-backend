@@ -137,16 +137,10 @@ export interface HolidaySchedule {
   closeTime?: string;
 }
 
-export interface GapPolicy {
-  enabled: boolean;
-  minimumGapMinutes: 30 | 60;
-}
-
 export interface BookingVenue extends Venue {
   weeklySchedule: Record<string, DailySchedule | null>;
   holidays: HolidaySchedule[];
   slotDurationMinutes: number;
-  gapPolicy: GapPolicy;
   ownerUserID: Types.ObjectId;
 }
 

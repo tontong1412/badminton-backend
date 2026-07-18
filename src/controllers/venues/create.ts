@@ -14,7 +14,6 @@ interface CreateVenuePayload {
   };
   weeklySchedule?: Record<string, { open: string; close: string } | null>;
   holidays?: { date: string; isClosed: boolean; openTime?: string; closeTime?: string }[];
-  gapPolicy?: { enabled: boolean; minimumGapMinutes: 30 | 60 };
 }
 
 const create = async(

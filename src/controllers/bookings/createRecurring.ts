@@ -140,24 +140,6 @@ const createRecurring = async(
         continue
       }
 
-      if (!canBookAsAdmin) {
-        const gapValidation = await bookingUtils.validateBookingGap(
-          court.id as string,
-          date,
-          req.body.startTime,
-          req.body.endTime,
-          venue.gapPolicy,
-          schedule.open,
-          schedule.close,
-        )
-        if (!gapValidation.valid) {
-          conflicts.push({
-            courtID: court.id as string,
-            date: date.toISOString(),
-            reason: gapValidation.reason ?? 'Gap rule conflict.',
-          })
-        }
-      }
     }
   }
 
