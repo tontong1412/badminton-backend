@@ -269,6 +269,40 @@ const enumerateRecurringDates = (
   return dates
 }
 
+export const splitTimeRangeBySlot = (
+  startTime: string,
+  endTime: string,
+  slotDurationMinutes: number,
+): Array<{ startTime: string; endTime: string; durationMinutes: number }> => {
+  if (!Number.isInteger(slotDurationMinutes) || slotDurationMinutes <= 0) {
+    throw new Error('slotDurationMinutes must be a positive integer.')
+  }
+
+  const start = timeToMinutes(startTime)
+  const end = timeToMinutes(endTime)
+
+  if (end <= start) {
+    throw new Error('endTime must be after startTime.')
+  }
+
+  const totalDuration = end - start
+  if (totalDuration % slotDurationMinutes !== 0) {
+    throw new Error(`Time range must align with ${slotDurationMinutes}-minute slots.`)
+  }
+
+  const slots: Array<{ startTime: string; endTime: string; durationMinutes: number }> = []
+  for (let cursor = start; cursor < end; cursor += slotDurationMinutes) {
+    const slotEnd = cursor + slotDurationMinutes
+    slots.push({
+      startTime: minutesToTime(cursor),
+      endTime: minutesToTime(slotEnd),
+      durationMinutes: slotDurationMinutes,
+    })
+  }
+
+  return slots
+}
+
 export default {
   SLOT_DURATION_MINUTES,
   MIN_BOOKING_MINUTES,
@@ -286,4 +320,5 @@ export default {
   calculateTotalPrice,
   calculateTotalPriceWithRules,
   enumerateRecurringDates,
+  splitTimeRangeBySlot,
 }

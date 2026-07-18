@@ -166,7 +166,28 @@ const createRecurring = async(
     return
   }
 
-  const durationMinutes = bookingUtils.calculateDurationMinutes(req.body.startTime, req.body.endTime)
+  const slotDurationMinutes = venue.slotDurationMinutes ?? bookingUtils.SLOT_DURATION_MINUTES
+  const windowStartMinutes = bookingUtils.timeToMinutes(req.body.startTime)
+  const windowEndMinutes = bookingUtils.timeToMinutes(req.body.endTime)
+  const windowDurationMinutes = windowEndMinutes - windowStartMinutes
+
+  if (windowDurationMinutes <= 0 || windowDurationMinutes % slotDurationMinutes !== 0) {
+    res.status(400).json({
+      message: `Recurring window must align with venue slot duration (${slotDurationMinutes} minutes).`,
+    })
+    return
+  }
+
+  const slotTemplates: Array<{ startTime: string; endTime: string; durationMinutes: number }> = []
+  for (let cursor = windowStartMinutes; cursor < windowEndMinutes; cursor += slotDurationMinutes) {
+    const slotEnd = cursor + slotDurationMinutes
+    slotTemplates.push({
+      startTime: bookingUtils.minutesToTime(cursor),
+      endTime: bookingUtils.minutesToTime(slotEnd),
+      durationMinutes: slotDurationMinutes,
+    })
+  }
+
   const bookingBundleID = new Types.ObjectId()
   const bookingRef = generateBookingRef()
 
@@ -174,7 +195,7 @@ const createRecurring = async(
     courtID: court._id,
     startTime: req.body.startTime,
     endTime: req.body.endTime,
-    durationMinutes,
+    durationMinutes: slotDurationMinutes,
     pattern: req.body.pattern,
     daysOfWeek: req.body.pattern === RecurringPattern.Weekly ? req.body.daysOfWeek : undefined,
     rangeStart: bookingUtils.normalizeDate(req.body.rangeStart),
@@ -186,31 +207,35 @@ const createRecurring = async(
     recurringGroups.map((group) => [group.courtID.toString(), group._id])
   )
 
-  const bookings = await BookingModel.insertMany(courts.flatMap((court) => dates.map((date) => ({
-    bookingBundleID,
-    bookingRef,
-    courtID: court._id,
-    date,
-    startTime: req.body.startTime,
-    endTime: req.body.endTime,
-    durationMinutes,
-    totalPrice: bookingUtils.calculateTotalPriceWithRules(court, req.body.startTime, req.body.endTime),
-    currency: court.currency,
-    bookerType: canBookAsAdmin ? 'admin' : 'user',
-    userID: canBookAsAdmin ? undefined : res.locals.user.id,
-    guestName: req.body.guestName || undefined,
-    guestPhone: req.body.guestPhone || undefined,
-    guestEmail: req.body.guestEmail || undefined,
-    createdByUserID: res.locals.user.id,
-    bookingType: BookingType.Recurring,
-    recurringGroupID: recurringGroupByCourtID.get(court._id.toString()),
-    status: canBookAsAdmin ? BookingStatus.Confirmed : BookingStatus.Pending,
-    paymentStatus: req.body.slip ? PaymentStatus.Pending : PaymentStatus.Unpaid,
-    slip: req.body.slip,
-    slipTimestamp: req.body.slip ? new Date() : undefined,
-    note: req.body.note,
-    resaleOutcome: ResaleOutcome.None,
-  }))))
+  const bookings = await BookingModel.insertMany(courts.flatMap((court) => dates.flatMap((date) => {
+    const recurringGroupID = recurringGroupByCourtID.get(court._id.toString())
+
+    return slotTemplates.map((slot) => ({
+      bookingBundleID,
+      bookingRef,
+      courtID: court._id,
+      date,
+      startTime: slot.startTime,
+      endTime: slot.endTime,
+      durationMinutes: slot.durationMinutes,
+      totalPrice: bookingUtils.calculateTotalPriceWithRules(court, slot.startTime, slot.endTime),
+      currency: court.currency,
+      bookerType: canBookAsAdmin ? 'admin' : 'user',
+      userID: canBookAsAdmin ? undefined : res.locals.user.id,
+      guestName: req.body.guestName || undefined,
+      guestPhone: req.body.guestPhone || undefined,
+      guestEmail: req.body.guestEmail || undefined,
+      createdByUserID: res.locals.user.id,
+      bookingType: BookingType.Recurring,
+      recurringGroupID,
+      status: canBookAsAdmin ? BookingStatus.Confirmed : BookingStatus.Pending,
+      paymentStatus: req.body.slip ? PaymentStatus.Pending : PaymentStatus.Unpaid,
+      slip: req.body.slip,
+      slipTimestamp: req.body.slip ? new Date() : undefined,
+      note: req.body.note,
+      resaleOutcome: ResaleOutcome.None,
+    }))
+  })))
 
   for (const recurringGroup of recurringGroups) {
     const groupBookings = bookings.filter((booking) => (

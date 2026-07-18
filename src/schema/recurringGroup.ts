@@ -23,7 +23,7 @@ const recurringGroupSchema = new Schema<RecurringGroupDocument>({
   },
   startTime: { type: String, required: true },
   endTime: { type: String, required: true },
-  durationMinutes: { type: Number, required: true, min: 60 },
+  durationMinutes: { type: Number, required: true, min: 30 },
   pattern: {
     type: String,
     enum: Object.values(RecurringPattern),

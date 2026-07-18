@@ -15,6 +15,7 @@ const {
   validateBookingWindow,
   calculateTotalPrice,
   enumerateRecurringDates,
+  splitTimeRangeBySlot,
 } = bookingUtils
 
 // ─── timeToMinutes ────────────────────────────────────────────────────────────
@@ -278,6 +279,29 @@ describe('enumerateRecurringDates', () => {
   it('start == end returns single date for daily', () => {
     const dates = enumerateRecurringDates('daily', new Date('2026-05-10'), new Date('2026-05-10'))
     expect(dates).toHaveLength(1)
+  })
+})
+
+// ─── splitTimeRangeBySlot ───────────────────────────────────────────────────
+
+describe('splitTimeRangeBySlot', () => {
+  it('splits a 2-hour range into 2 one-hour slots', () => {
+    const slots = splitTimeRangeBySlot('20:00', '22:00', 60)
+    expect(slots).toEqual([
+      { startTime: '20:00', endTime: '21:00', durationMinutes: 60 },
+      { startTime: '21:00', endTime: '22:00', durationMinutes: 60 },
+    ])
+  })
+
+  it('splits a 2-hour range into 4 half-hour slots', () => {
+    const slots = splitTimeRangeBySlot('20:00', '22:00', 30)
+    expect(slots).toHaveLength(4)
+    expect(slots[0]).toEqual({ startTime: '20:00', endTime: '20:30', durationMinutes: 30 })
+    expect(slots[3]).toEqual({ startTime: '21:30', endTime: '22:00', durationMinutes: 30 })
+  })
+
+  it('throws when range does not align with slot duration', () => {
+    expect(() => splitTimeRangeBySlot('20:30', '22:00', 60)).toThrow(/align/)
   })
 })
 
