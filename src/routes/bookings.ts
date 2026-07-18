@@ -5,6 +5,7 @@ import middlewares from '../middlewares'
 const router = express.Router()
 
 router.get('/', middlewares.auth, bookingController.get)
+router.get('/paged', middlewares.auth, bookingController.getPaged)
 router.get('/venue-admin', middlewares.auth, bookingController.getVenueBookings)
 router.get('/venue-admin/analytics', middlewares.auth, bookingController.getVenueAnalytics)
 router.get('/bundles/:bookingBundleID', bookingController.getBundle)
