@@ -64,6 +64,7 @@ const purchaseListing = async(
     totalPrice: listing.askingPrice,
     currency: listing.currency,
     bookerType: currentUser ? 'user' : 'guest',
+    createdByUserID: currentUser?.id,
     userID: currentUser?.id,
     guestName: currentUser ? undefined : req.body.guestName,
     guestPhone: currentUser ? undefined : req.body.guestPhone,

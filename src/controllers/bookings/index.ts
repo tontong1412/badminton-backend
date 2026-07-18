@@ -5,6 +5,7 @@ import createRecurring from './createRecurring'
 import createSingle from './createSingle'
 import get from './get'
 import getById from './getById'
+import getVenueAnalytics from './getVenueAnalytics'
 import getBundle from './getBundle'
 import getVenueBookings from './getVenueBookings'
 import markAsPaid from './markAsPaid'
@@ -16,6 +17,7 @@ export default {
   createRecurring: controllerErrorHandler(createRecurring),
   get: controllerErrorHandler(get),
   getById: controllerErrorHandler(getById),
+  getVenueAnalytics: controllerErrorHandler(getVenueAnalytics),
   getBundle: controllerErrorHandler(getBundle),
   getVenueBookings: controllerErrorHandler(getVenueBookings),
   cancel: controllerErrorHandler(cancel),

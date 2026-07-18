@@ -67,8 +67,8 @@ const payoutWithSlip = async(
 
     const currency = listings[0].currency ?? 'THB'
     const totalGross = listings.reduce((sum, l) => sum + l.askingPrice, 0)
-    const fee = totalGross * 0.1
-    const netAmount = totalGross * 0.9
+    const fee = totalGross * 0.07
+    const netAmount = totalGross * 0.93
 
     // Build slot rows for email
     const slotRows = listings.map((listing) => {
@@ -112,7 +112,7 @@ const payoutWithSlip = async(
       <td style="padding:4px 12px;text-align:right">${totalGross.toFixed(2)} ${currency}</td>
     </tr>
     <tr>
-      <td style="padding:4px 12px;color:#dc2626">Processing Fee (10%)</td>
+      <td style="padding:4px 12px;color:#dc2626">Processing Fee (7%)</td>
       <td style="padding:4px 12px;text-align:right;color:#dc2626">−${fee.toFixed(2)} ${currency}</td>
     </tr>
     <tr style="font-weight:bold;font-size:1.1em">
