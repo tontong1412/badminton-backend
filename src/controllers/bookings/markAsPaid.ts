@@ -4,6 +4,7 @@ import CourtModel from '../../schema/court'
 import VenueModel from '../../schema/venue'
 import requestUserUtils from '../../utils/requestUser'
 import { BookingStatus, PaymentStatus, RequestWithCookies } from '../../type'
+import { finalizeResaleListingsForBookings } from '../../utils/resaleListingLifecycle'
 
 const markAsPaid = async(
   req: RequestWithCookies & Request<{ id: string }>,
@@ -57,6 +58,11 @@ const markAsPaid = async(
     { paymentStatus: PaymentStatus.Paid, status: BookingStatus.Confirmed },
     { new: true },
   )
+
+  if (updated) {
+    await finalizeResaleListingsForBookings([updated])
+  }
+
   res.json({ message: 'Booking marked as paid', booking: updated })
 }
 

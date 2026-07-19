@@ -8,6 +8,7 @@ import mediaUtils from '../../utils/media'
 import slipokUtils from '../../utils/slipok'
 import encryptionUtils from '../../utils/encryption'
 import config from '../../config'
+import { finalizeResaleListingsForBookings } from '../../utils/resaleListingLifecycle'
 
 interface PayBookingPayload {
   slip: string;
@@ -130,6 +131,13 @@ const payBooking = async(
   )
 
   const updatedBookings = await BookingModel.find({ bookingBundleID })
+
+  if (slipokVerified) {
+    await finalizeResaleListingsForBookings(updatedBookings, {
+      venuePaymentSlip: uploadedSlip.url,
+      venuePaymentSlipTimestamp: new Date(),
+    })
+  }
 
   res.json({
     message: slipokVerified

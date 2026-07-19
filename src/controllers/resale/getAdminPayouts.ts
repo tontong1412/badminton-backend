@@ -3,7 +3,7 @@ import ResaleListingModel from '../../schema/resaleListing'
 import PlayerModel from '../../schema/player'
 import BookingModel from '../../schema/booking'
 import CourtModel from '../../schema/court'
-import { ResponseLocals, SellerPayoutStatus, UserRole } from '../../type'
+import { ResaleStatus, ResponseLocals, SellerPayoutStatus, UserRole } from '../../type'
 
 const getAdminPayouts = async(_req: Request, res: Response<unknown, ResponseLocals>): Promise<void> => {
   if (res.locals.user.role !== UserRole.Admin) {
@@ -12,7 +12,8 @@ const getAdminPayouts = async(_req: Request, res: Response<unknown, ResponseLoca
   }
 
   const listings = await ResaleListingModel.find({
-    status: 'sold',
+    status: ResaleStatus.Sold,
+    soldAt: { $exists: true },
     sellerPayoutStatus: SellerPayoutStatus.Pending,
   }).sort({ soldAt: 1 })
 

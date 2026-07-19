@@ -1,6 +1,6 @@
 import BookingModel from '../schema/booking'
 import ResaleListingModel from '../schema/resaleListing'
-import { BookingStatus, ResaleOutcome, ResaleStatus } from '../type'
+import { BookingStatus, PaymentStatus, ResaleOutcome, ResaleStatus } from '../type'
 import mongoose from 'mongoose'
 
 const EXPIRY_MINUTES = 10
@@ -18,7 +18,7 @@ async function cancelExpiredBookings(): Promise<void> {
     // Find expired resale buyer bookings separately so we can restore the listing + source booking
     const expiredResaleBookings = await BookingModel.find({
       status: BookingStatus.Pending,
-      paymentStatus: 'unpaid',
+      paymentStatus: { $in: [PaymentStatus.Unpaid, PaymentStatus.Pending] },
       createdAt: { $lte: cutoff },
       resaleSourceListingID: { $exists: true },
     })
@@ -55,6 +55,8 @@ async function cancelExpiredBookings(): Promise<void> {
       listing.buyerName = undefined
       listing.buyerPhone = undefined
       listing.buyerEmail = undefined
+      listing.venuePaymentSlip = undefined
+      listing.venuePaymentSlipTimestamp = undefined
       listing.soldAt = undefined
       await listing.save()
 
