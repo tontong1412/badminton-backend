@@ -94,7 +94,7 @@ const purchaseListing = async(
     await sourceBooking.save()
   }
 
-  listing.status = ResaleStatus.Sold
+  listing.status = ResaleStatus.Pending
   listing.buyerType = currentUser ? 'user' : 'guest'
   listing.buyerID = currentUser?.id
   listing.buyerName = currentUser ? undefined : req.body.guestName
@@ -102,7 +102,7 @@ const purchaseListing = async(
   listing.buyerEmail = currentUser ? undefined : req.body.guestEmail
   listing.venuePaymentSlip = req.body.slip
   listing.venuePaymentSlipTimestamp = req.body.slip ? new Date() : undefined
-  listing.soldAt = new Date()
+  listing.soldAt = undefined
   await listing.save()
 
   res.status(201).json({ listing, booking: buyerBooking })

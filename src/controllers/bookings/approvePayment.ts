@@ -6,6 +6,7 @@ import UserModel from '../../schema/user'
 import requestUserUtils from '../../utils/requestUser'
 import sendBookingConfirmationEmail from '../../utils/bookingEmail'
 import { BookingStatus, PaymentStatus, RequestWithCookies } from '../../type'
+import { finalizeResaleListingsForBookings } from '../../utils/resaleListingLifecycle'
 
 const approvePayment = async(
   req: RequestWithCookies & Request<{ bookingBundleID: string }>,
@@ -61,6 +62,8 @@ const approvePayment = async(
     b.paymentStatus = PaymentStatus.Paid
     b.status = BookingStatus.Confirmed
   })
+
+  await finalizeResaleListingsForBookings(bookings)
 
   res.json({ message: 'Payment approved', bookings })
 

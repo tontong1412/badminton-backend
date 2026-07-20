@@ -5,7 +5,7 @@ import PlayerModel from '../../schema/player'
 import BookingModel from '../../schema/booking'
 import CourtModel from '../../schema/court'
 import UserModel from '../../schema/user'
-import { ResponseLocals, SellerPayoutStatus, UserRole } from '../../type'
+import { ResaleStatus, ResponseLocals, SellerPayoutStatus, UserRole } from '../../type'
 import sendEmail from '../../utils/sendEmail'
 
 interface PayoutWithSlipBody {
@@ -32,7 +32,12 @@ const payoutWithSlip = async(
   }
 
   // Fetch all listings
-  const listings = await ResaleListingModel.find({ _id: { $in: listingIDs }, status: 'sold', sellerPayoutStatus: SellerPayoutStatus.Pending })
+  const listings = await ResaleListingModel.find({
+    _id: { $in: listingIDs },
+    status: ResaleStatus.Sold,
+    soldAt: { $exists: true },
+    sellerPayoutStatus: SellerPayoutStatus.Pending,
+  })
 
   if (listings.length === 0) {
     res.status(404).json({ message: 'No pending listings found' })

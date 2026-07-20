@@ -186,6 +186,7 @@ export enum RecurringPattern {
 
 export enum ResaleStatus {
   Active = 'active',
+  Pending = 'pending',
   Sold = 'sold',
   Cancelled = 'cancelled',
 }
