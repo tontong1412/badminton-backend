@@ -2,6 +2,8 @@ import EVENT from './event'
 
 const DATABASE  = {
   COLLECTION: {
+    SESSION: 'session',
+    SESSION_REGISTRATION: 'sessionRegistration',
     PLAYER: 'player',
     USER: 'user',
     TOURNAMENT: 'tournament',
