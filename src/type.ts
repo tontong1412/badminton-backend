@@ -621,3 +621,60 @@ export interface EventTeam {
   note?: string;
 }
 
+// ── Session Matches ───────────────────────────────────────────────────────────
+
+export enum SessionMatchStatus {
+  Pending = 'pending',
+  Playing = 'playing',
+  Completed = 'completed',
+  Skipped = 'skipped',
+}
+
+export interface SessionMatchTeam {
+  playerIDs: Types.ObjectId[];
+  playerSnapshots: SessionRegistrationPlayerSnapshot[];
+}
+
+export interface SessionOpenPlayMatch {
+  id: Types.ObjectId;
+  sessionID: Types.ObjectId;
+  court: string;
+  teams: [SessionMatchTeam, SessionMatchTeam];
+  status: SessionMatchStatus;
+  startedAt?: Date;
+  endedAt?: Date;
+  winnerTeamIndex?: 0 | 1;
+  createdAt: Date;
+}
+
+export type NewSessionOpenPlayMatch = Omit<SessionOpenPlayMatch, 'id' | 'createdAt'>
+
+export interface SessionHeadToHeadCount {
+  playerID: Types.ObjectId;
+  count: number;
+}
+
+export interface SessionPlayerStats {
+  playerID: Types.ObjectId;
+  player?: SessionRegistrationPlayerSnapshot;
+  gamesPlayed: number;
+  wins: number;
+  losses: number;
+  waitingRounds: number;
+  playTimeMs: number;
+  totalWaitingTimeMs: number;
+  currentWaitTimeMs: number;
+  waitSinceLastMatchMs?: number;
+  currentlyPlaying: boolean;
+  lastMatchStartedAt?: Date;
+  lastMatchEndedAt?: Date;
+  teammateHistory: SessionHeadToHeadCount[];
+  opponentHistory: SessionHeadToHeadCount[];
+}
+
+export interface SessionStatsResponse {
+  sessionID: Types.ObjectId;
+  generatedAt: Date;
+  players: SessionPlayerStats[];
+}
+

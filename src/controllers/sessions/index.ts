@@ -1,5 +1,10 @@
 import controllerErrorHandler from '../../utils/controllerErrorHandler'
 import addRegistration from './addRegistration'
+import autoGenerateMatches from './autoGenerateMatches'
+import createMatch from './createMatch'
+import deleteMatch from './deleteMatch'
+import getMatches from './getMatches'
+import updateMatch from './updateMatch'
 import approveRegistration from './approveRegistration'
 import cancel from './cancel'
 import cancelMyRegistration from './cancelMyRegistration'
@@ -11,6 +16,7 @@ import getById from './getById'
 import getMine from './getMine'
 import getMyRegistration from './getMyRegistration'
 import getRegistrations from './getRegistrations'
+import getStats from './getStats'
 import register from './register'
 import rejectRegistration from './rejectRegistration'
 import removeRegistration from './removeRegistration'
@@ -28,6 +34,7 @@ export default {
   getMine: controllerErrorHandler(getMine),
   getMyRegistration: controllerErrorHandler(getMyRegistration),
   getRegistrations: controllerErrorHandler(getRegistrations),
+  getStats: controllerErrorHandler(getStats),
   register: controllerErrorHandler(register),
   rejectRegistration: controllerErrorHandler(rejectRegistration),
   removeRegistration: controllerErrorHandler(removeRegistration),
@@ -39,4 +46,9 @@ export default {
   end: controllerErrorHandler(end),
   updateAttendanceStatus: controllerErrorHandler(updateAttendanceStatus),
   updatePaymentStatus: controllerErrorHandler(updatePaymentStatus),
+  getMatches: controllerErrorHandler(getMatches),
+  createMatch: controllerErrorHandler(createMatch),
+  updateMatch: controllerErrorHandler(updateMatch),
+  deleteMatch: controllerErrorHandler(deleteMatch),
+  autoGenerateMatches: controllerErrorHandler(autoGenerateMatches),
 }

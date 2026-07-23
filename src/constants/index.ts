@@ -4,6 +4,7 @@ const DATABASE  = {
   COLLECTION: {
     SESSION: 'session',
     SESSION_REGISTRATION: 'sessionRegistration',
+    SESSION_MATCH: 'sessionMatch',
     PLAYER: 'player',
     USER: 'user',
     TOURNAMENT: 'tournament',
