@@ -78,6 +78,8 @@ playerSchema.set('toJSON', {
   }
 })
 
-const PlayerModel = mongoose.model<PlayerDocument>('Player', playerSchema)
+const playerModelName = constants.DATABASE.COLLECTION.PLAYER
+const PlayerModel = (mongoose.models[playerModelName] as mongoose.Model<PlayerDocument> | undefined)
+  ?? mongoose.model<PlayerDocument>(playerModelName, playerSchema)
 
 export default PlayerModel

@@ -23,6 +23,32 @@ const sessionRegistrationSchema = new Schema<SessionRegistrationDocument>({
     ref: constants.DATABASE.COLLECTION.PLAYER,
     required: true,
   },
+  player: {
+    id: {
+      type: Schema.Types.ObjectId,
+      required: true,
+    },
+    officialName: {
+      th: { type: String, trim: true },
+      en: { type: String, trim: true },
+      pronunciation: { type: String, trim: true },
+    },
+    displayName: {
+      th: { type: String, trim: true },
+      en: { type: String, trim: true },
+      pronunciation: { type: String, trim: true },
+    },
+    photo: { type: String, trim: true },
+    level: { type: Number, min: 0 },
+    club: { type: String, trim: true },
+    contact: {
+      line: { type: String, trim: true },
+      tel: { type: String, trim: true },
+      tg: { type: String, trim: true },
+      whatsapp: { type: String, trim: true },
+      email: { type: String, trim: true },
+    },
+  },
   registeredAt: { type: Date, required: true, default: Date.now },
   registrationStatus: {
     type: String,

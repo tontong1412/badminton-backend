@@ -555,6 +555,7 @@ export interface SessionRegistration {
   id: Types.ObjectId;
   sessionID: Types.ObjectId;
   playerID: Types.ObjectId;
+  player?: SessionRegistrationPlayerSnapshot;
   registeredAt: Date;
   registrationStatus: SessionRegistrationStatus;
   paymentStatus: SessionRegistrationPaymentStatus;

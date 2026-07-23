@@ -1,10 +1,12 @@
 import { Types } from 'mongoose'
+import PlayerModel from '../schema/player'
 import SessionModel from '../schema/session'
 import SessionRegistrationModel, { SessionRegistrationDocument } from '../schema/sessionRegistration'
 import {
   SessionAttendanceStatus,
   SessionRegistrationDetail,
   SessionRegistrationPaymentStatus,
+  SessionRegistrationPlayerSnapshot,
   SessionRegistrationStatus,
   SessionStatus,
 } from '../type'
@@ -50,6 +52,25 @@ const ensureObjectId = (value: string, label: string): Types.ObjectId => {
   }
 
   return new Types.ObjectId(value)
+}
+
+const getPlayerSnapshot = async(playerID: Types.ObjectId): Promise<SessionRegistrationPlayerSnapshot> => {
+  const player = await PlayerModel.findById(playerID)
+    .select('officialName displayName photo level club contact')
+
+  if (!player) {
+    throw createHttpError(404, 'Player not found')
+  }
+
+  return {
+    id: player._id,
+    officialName: player.officialName,
+    displayName: player.displayName,
+    photo: player.photo,
+    level: player.level,
+    club: player.club,
+    contact: player.contact,
+  }
 }
 
 const syncSessionCounts = async(sessionID: string) => {
@@ -163,6 +184,7 @@ const registerPlayer = async({ sessionID, playerID, actorUserID, manual = false,
   }
 
   const playerObjectId = ensureObjectId(playerID, 'player ID')
+  const playerSnapshot = await getPlayerSnapshot(playerObjectId)
   const existingRegistration = await SessionRegistrationModel.findOne({ sessionID, playerID: playerObjectId })
 
   if (existingRegistration && [SessionRegistrationStatus.Pending, SessionRegistrationStatus.Approved, SessionRegistrationStatus.WaitingList].includes(existingRegistration.registrationStatus)) {
@@ -185,6 +207,7 @@ const registerPlayer = async({ sessionID, playerID, actorUserID, manual = false,
   const payload = {
     sessionID: ensureObjectId(sessionID, 'session ID'),
     playerID: playerObjectId,
+    player: playerSnapshot,
     registeredAt: new Date(),
     registrationStatus,
     paymentStatus: SessionRegistrationPaymentStatus.Pending,
@@ -314,10 +337,10 @@ const getRegistrationDetail = async(sessionID: string, playerID: string): Promis
 
   const json = registration.toJSON() as unknown as SessionRegistrationDetail & { playerID: Record<string, unknown> & { id?: string } }
   const populatedPlayer = registration.populated('playerID') ? registration.get('playerID') as unknown as PopulatedPlayerJSON : undefined
-  const player = populatedPlayer ? {
+  const player = json.player ?? (populatedPlayer ? {
     ...populatedPlayer,
     id: ensureObjectId(populatedPlayer.id ?? registration.playerID.toString(), 'player ID'),
-  } : undefined
+  } : undefined)
 
   return {
     ...json,
@@ -338,10 +361,10 @@ const listRegistrations = async(sessionID: string): Promise<SessionRegistrationD
 
     return {
       ...json,
-      player: playerJSON ? {
+      player: json.player ?? (playerJSON ? {
         ...playerJSON,
         id: ensureObjectId(playerJSON.id ?? registration.playerID.toString(), 'player ID'),
-      } : undefined,
+      } : undefined),
     }
   })
 }
