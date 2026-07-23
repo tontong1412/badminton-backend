@@ -1,6 +1,5 @@
 import { Request, Response } from 'express'
 import SessionModel from '../../schema/session'
-import { SessionStatus } from '../../type'
 import { buildSessionDocumentPayload, buildSessionStatus, SessionPayload } from './shared'
 
 const update = async(req: Request<{ id: string }, unknown, Partial<SessionPayload>>, res: Response): Promise<void> => {
@@ -33,7 +32,7 @@ const update = async(req: Request<{ id: string }, unknown, Partial<SessionPayloa
     status: buildSessionStatus(
       existingSession.currentParticipants,
       sessionPayload.maxParticipants,
-      existingSession.status as SessionStatus,
+      existingSession.status,
     ),
   })
 

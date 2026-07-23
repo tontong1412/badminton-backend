@@ -177,10 +177,10 @@ const buildStats = async(sessionID: string): Promise<SessionStatsBuildResult> =>
   const indexByPlayerID = new Map<string, InternalPlayerStats>()
 
   for (const registration of approvedRegistrations) {
-    const playerID = registration.playerID as Types.ObjectId
+    const playerID = registration.playerID
     indexByPlayerID.set(playerID.toString(), {
       playerID,
-      player: registration.player as SessionRegistrationPlayerSnapshot | undefined,
+      player: registration.player,
       registeredAt: registration.registeredAt,
       gamesPlayed: 0,
       wins: 0,
