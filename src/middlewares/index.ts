@@ -4,6 +4,7 @@ import { RequestWithCookies, TokenPayload, UserRole } from '../type'
 import tokenUtils from '../utils/token'
 import config from '../config'
 import VenueModel from '../schema/venue'
+import SessionModel from '../schema/session'
 
 const errorHandler = (
   error: unknown,
@@ -101,9 +102,45 @@ const venueManagerAuth = (req: RequestWithCookies & Request<{ id: string }>, res
   })
 }
 
+const sessionOrganizerAuth = (req: RequestWithCookies & Request<{ id: string }>, res: Response, next: NextFunction) => {
+  // eslint-disable-next-line @typescript-eslint/no-misused-promises
+  auth(req, res, async() => {
+    try {
+      const user = res.locals.user as { id: string; role: UserRole }
+
+      if (user.role === UserRole.Admin) {
+        next()
+        return
+      }
+
+      if (!Types.ObjectId.isValid(req.params.id)) {
+        res.status(400).json({ error: 'Invalid session ID' })
+        return
+      }
+
+      const session = await SessionModel.findById(req.params.id).select('organizerUserIDs')
+      if (!session) {
+        res.status(404).json({ message: 'Session not found' })
+        return
+      }
+
+      const isOrganizer = session.organizerUserIDs.some((id) => id.toString() === user.id.toString())
+      if (!isOrganizer) {
+        res.status(403).send('Forbidden')
+        return
+      }
+
+      next()
+    } catch (err) {
+      next(err)
+    }
+  })
+}
+
 export default {
   errorHandler,
   auth,
   adminAuth,
   venueManagerAuth,
+  sessionOrganizerAuth,
 }
