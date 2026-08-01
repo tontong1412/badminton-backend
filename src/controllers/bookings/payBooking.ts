@@ -95,12 +95,17 @@ const payBooking = async(
       const imageBuffer = Buffer.from(matches[2], 'base64')
       const slipResult = await slipokUtils.verifySlip(imageBuffer, mimeType, totalAmount, { url: apiUrl, apiKey: slipokApiKey })
       if (!slipResult.success) {
-        res.status(422).json({
-          message: slipResult.errorMessage,
-        })
-        return
+        if (slipResult.errorCode === 1010) {
+          // Duplicate slip detected — fall through to save as pending for manual approval
+        } else {
+          res.status(422).json({
+            message: slipResult.errorMessage,
+          })
+          return
+        }
+      } else {
+        slipokVerified = true
       }
-      slipokVerified = true
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Slip verification failed'
       res.status(400).json({ message })

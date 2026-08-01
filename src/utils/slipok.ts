@@ -5,6 +5,7 @@ export interface SlipOKResult {
   senderName?: string;
   receiverName?: string;
   errorMessage?: string;
+  errorCode?: number;
 }
 
 /**
@@ -40,7 +41,8 @@ const verifySlip = async(
 
   if (!response.ok) {
     const msg = (json.message as string | undefined) ?? `SlipOK error ${response.status}`
-    return { success: false, errorMessage: msg }
+    const code = (json.code as number | undefined) ?? response.status
+    return { success: false, errorMessage: msg, errorCode: code }
   }
 
   const data = json.data as Record<string, unknown> | undefined
