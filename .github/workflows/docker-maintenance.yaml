@@ -43,8 +43,14 @@ jobs:
               exit 0
             fi
 
-            echo "Removing Docker images not used by any container"
-            sudo docker image prune -a -f
+            echo "Removing dangling Docker images with <none> repository and tag"
+            DANGLING_IMAGE_IDS=$(sudo docker image ls --filter "dangling=true" --format '{{.Repository}} {{.Tag}} {{.ID}}' | awk '$1=="<none>" && $2=="<none>" {print $3}' | sort -u)
+
+            if [ -z "$DANGLING_IMAGE_IDS" ]; then
+              echo "No <none>:<none> images found to remove."
+            else
+              echo "$DANGLING_IMAGE_IDS" | xargs -n 1 sudo docker rmi
+            fi
             echo
 
             echo "All Docker images after cleanup"
