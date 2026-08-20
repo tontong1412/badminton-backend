@@ -21,6 +21,15 @@ interface CreateSingleBookingItem {
   date: string;
   startTime: string;
   endTime: string;
+  addOnIDsBySlot?: Record<string, string[]>;
+  addOnIDs?: string[];
+}
+
+interface BookingAddOnSnapshot {
+  id: string;
+  name: string;
+  price: number;
+  details?: string;
 }
 
 interface CreateSingleBookingPayload {
@@ -81,6 +90,8 @@ const createSingle = async(
     durationMinutes: number;
     totalPrice: number;
     currency: string;
+    selectedAddOns: BookingAddOnSnapshot[];
+    addOnTotalPrice: number;
     discountAmount?: number;
   }> = []
   let firstVenueName = ''
@@ -146,6 +157,34 @@ const createSingle = async(
       return
     }
 
+    const courtAddOns = (court.addOns ?? []).filter((addOn) => addOn.isActive !== false)
+    const courtAddOnByID = new Map(courtAddOns.map((addOn) => [addOn.id, addOn]))
+    const normalizeIDs = (ids: string[] | undefined): string[] => Array.from(new Set((ids ?? []).map((id) => id.trim()).filter(Boolean)))
+    const mapToSnapshots = (ids: string[]): BookingAddOnSnapshot[] => ids
+      .map((id) => courtAddOnByID.get(id))
+      .filter((addOn): addOn is NonNullable<typeof addOn> => Boolean(addOn))
+      .map((addOn) => ({
+        id: addOn.id,
+        name: addOn.name,
+        price: addOn.price,
+        details: addOn.details,
+      }))
+
+    const requestedAddOnIDsBySlot = item.addOnIDsBySlot ?? {}
+    const legacyRequestedAddOnIDs = normalizeIDs(item.addOnIDs)
+
+    const itemDraftBookings: Array<{
+      courtID: Types.ObjectId;
+      date: Date;
+      startTime: string;
+      endTime: string;
+      durationMinutes: number;
+      totalPrice: number;
+      currency: string;
+      selectedAddOns: BookingAddOnSnapshot[];
+      addOnTotalPrice: number;
+    }> = []
+
     // Split the booking into 1-hour segments; each segment becomes its own booking document
     let cursor = bookingUtils.timeToMinutes(item.startTime)
     const endMinutes = bookingUtils.timeToMinutes(item.endTime)
@@ -153,18 +192,35 @@ const createSingle = async(
       const segEnd = Math.min(cursor + 60, endMinutes)
       const segStart = bookingUtils.minutesToTime(cursor)
       const segEndStr = bookingUtils.minutesToTime(segEnd)
+      const slotKey = `${segStart}-${segEndStr}`
+      const slotRequestedAddOnIDs = requestedAddOnIDsBySlot[slotKey] ? normalizeIDs(requestedAddOnIDsBySlot[slotKey]) : legacyRequestedAddOnIDs
+      const missingAddOnIDs = slotRequestedAddOnIDs.filter((id) => !courtAddOnByID.has(id))
+      if (missingAddOnIDs.length > 0) {
+        res.status(422).json({
+          message: `Invalid add-ons for court ${court.name} at ${slotKey}.`,
+          invalidAddOnIDs: missingAddOnIDs,
+          slot: slotKey,
+        })
+        return
+      }
+      const selectedAddOns = mapToSnapshots(slotRequestedAddOnIDs)
+      const addOnTotalPrice = selectedAddOns.reduce((sum, addOn) => sum + addOn.price, 0)
       const segDuration = segEnd - cursor
-      draftBookings.push({
+      itemDraftBookings.push({
         courtID: new Types.ObjectId(court.id as string),
         date: bookingDate,
         startTime: segStart,
         endTime: segEndStr,
         durationMinutes: segDuration,
-        totalPrice: bookingUtils.calculateTotalPriceWithRules(court, segStart, segEndStr),
+        totalPrice: Number((bookingUtils.calculateTotalPriceWithRules(court, segStart, segEndStr) + addOnTotalPrice).toFixed(2)),
         currency: court.currency,
+        selectedAddOns,
+        addOnTotalPrice,
       })
       cursor = segEnd
     }
+
+    draftBookings.push(...itemDraftBookings)
 
     inRequestByCourtDate.set(overlapKey, [...existingRanges, { startTime: item.startTime, endTime: item.endTime }])
   }
@@ -243,6 +299,8 @@ const createSingle = async(
     durationMinutes: item.durationMinutes,
     totalPrice: item.totalPrice,
     currency: item.currency,
+    selectedAddOns: item.selectedAddOns,
+    addOnTotalPrice: item.addOnTotalPrice,
     couponCode: appliedCouponCode,
     discountAmount: item.discountAmount,
     bookerType: req.body.bookedAsAdmin ? 'admin' : (currentUser ? 'user' : 'guest'),

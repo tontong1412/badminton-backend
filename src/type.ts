@@ -156,6 +156,21 @@ export interface BookingVenue extends Venue {
   ownerUserID: Types.ObjectId;
 }
 
+export interface CourtAddOn {
+  id: string;
+  name: string;
+  price: number;
+  details?: string;
+  isActive: boolean;
+}
+
+export interface BookingAddOnSnapshot {
+  id: string;
+  name: string;
+  price: number;
+  details?: string;
+}
+
 export interface Court {
   id: Types.ObjectId;
   venueID: Types.ObjectId;
@@ -164,6 +179,7 @@ export interface Court {
   pricePerHour: number;
   currency: string;
   status: 'active' | 'inactive';
+  addOns?: CourtAddOn[];
 }
 
 export type NewCourt = Omit<Court, 'id'>;
@@ -228,6 +244,8 @@ export interface Booking {
   recurringGroupID?: Types.ObjectId;
   status: BookingStatus;
   paymentStatus: PaymentStatus;
+  selectedAddOns?: BookingAddOnSnapshot[];
+  addOnTotalPrice?: number;
   slip?: string;
   slipTimestamp?: Date;
   resaleListingID?: Types.ObjectId;

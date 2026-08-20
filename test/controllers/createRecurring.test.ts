@@ -28,6 +28,10 @@ describe('createRecurring controller slot splitting', () => {
     currency: 'THB',
     pricingRules: [],
     pricePerHour: 300,
+    name: 'Court A',
+    addOns: [
+      { id: 'ac', name: 'Air Conditioning', price: 50, details: 'Cool air', isActive: true },
+    ],
   }
 
   const buildVenue = (slotDurationMinutes: 30 | 60) => ({
@@ -173,6 +177,101 @@ describe('createRecurring controller slot splitting', () => {
       message: 'Recurring window must align with venue slot duration (60 minutes).',
     })
     expect(vi.mocked(RecurringGroupModel.insertMany)).not.toHaveBeenCalled()
+    expect(vi.mocked(BookingModel.insertMany)).not.toHaveBeenCalled()
+  })
+
+  it('adds recurring add-on cost and stores add-on snapshots per slot', async() => {
+    mockReq.body.addOnIDsByCourt = { [baseCourt.id]: ['ac'] }
+    vi.mocked(VenueModel.findById).mockResolvedValue(buildVenue(60) as any)
+
+    const recurringGroupId = new Types.ObjectId()
+    vi.mocked(RecurringGroupModel.insertMany).mockResolvedValue([
+      {
+        _id: recurringGroupId,
+        courtID: courtObjectId,
+        bookingIDs: [],
+        save: vi.fn().mockResolvedValue(undefined),
+      },
+    ] as any)
+
+    vi.mocked(BookingModel.insertMany).mockImplementation(async(bookings: unknown) => {
+      return (bookings as any[]).map((booking, index) => ({
+        ...booking,
+        id: new Types.ObjectId((index + 30).toString(16).padStart(24, '0')).toString(),
+        toObject: () => booking,
+      })) as any
+    })
+
+    await createRecurring(mockReq, mockRes)
+
+    const insertedPayload = vi.mocked(BookingModel.insertMany).mock.calls[0][0] as any[]
+    expect(insertedPayload).toHaveLength(2)
+    expect(insertedPayload.every((entry) => entry.totalPrice === 350)).toBe(true)
+    expect(insertedPayload.every((entry) => entry.addOnTotalPrice === 50)).toBe(true)
+    expect(insertedPayload[0].selectedAddOns).toEqual([
+      { id: 'ac', name: 'Air Conditioning', price: 50, details: 'Cool air' },
+    ])
+  })
+
+  it('applies recurring add-ons per slot from addOnIDsByCourtAndSlot', async() => {
+    mockReq.body.addOnIDsByCourtAndSlot = {
+      [baseCourt.id]: {
+        '20:00-21:00': ['ac'],
+        '21:00-22:00': [],
+      },
+    }
+    vi.mocked(VenueModel.findById).mockResolvedValue(buildVenue(60) as any)
+
+    const recurringGroupId = new Types.ObjectId()
+    vi.mocked(RecurringGroupModel.insertMany).mockResolvedValue([
+      {
+        _id: recurringGroupId,
+        courtID: courtObjectId,
+        bookingIDs: [],
+        save: vi.fn().mockResolvedValue(undefined),
+      },
+    ] as any)
+
+    vi.mocked(BookingModel.insertMany).mockImplementation(async(bookings: unknown) => {
+      return (bookings as any[]).map((booking, index) => ({
+        ...booking,
+        id: new Types.ObjectId((index + 40).toString(16).padStart(24, '0')).toString(),
+        toObject: () => booking,
+      })) as any
+    })
+
+    await createRecurring(mockReq, mockRes)
+
+    const insertedPayload = vi.mocked(BookingModel.insertMany).mock.calls[0][0] as any[]
+    expect(insertedPayload).toHaveLength(2)
+    expect(insertedPayload[0].totalPrice).toBe(350)
+    expect(insertedPayload[0].addOnTotalPrice).toBe(50)
+    expect(insertedPayload[1].totalPrice).toBe(300)
+    expect(insertedPayload[1].addOnTotalPrice).toBe(0)
+  })
+
+  it('returns 422 when recurring add-on id is invalid for a court', async() => {
+    mockReq.body.addOnIDsByCourt = { [baseCourt.id]: ['bad-addon'] }
+    vi.mocked(VenueModel.findById).mockResolvedValue(buildVenue(60) as any)
+
+    const recurringGroupId = new Types.ObjectId()
+    vi.mocked(RecurringGroupModel.insertMany).mockResolvedValue([
+      {
+        _id: recurringGroupId,
+        courtID: courtObjectId,
+        bookingIDs: [],
+        save: vi.fn().mockResolvedValue(undefined),
+      },
+    ] as any)
+
+    await createRecurring(mockReq, mockRes)
+
+    expect(mockRes.status).toHaveBeenCalledWith(422)
+    expect(mockRes.json).toHaveBeenCalledWith(expect.objectContaining({
+      message: 'Invalid add-ons for court Court A.',
+      courtID: baseCourt.id,
+      invalidAddOnIDs: ['bad-addon'],
+    }))
     expect(vi.mocked(BookingModel.insertMany)).not.toHaveBeenCalled()
   })
 })
