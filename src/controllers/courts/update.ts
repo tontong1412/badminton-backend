@@ -11,6 +11,10 @@ interface CourtAddOnPayload {
   isActive?: boolean;
 }
 
+interface UpdateCourtPayload extends Record<string, unknown> {
+  addOns?: CourtAddOnPayload[];
+}
+
 const sanitizeAddOns = (addOns: CourtAddOnPayload[] | undefined): CourtAddOnPayload[] => {
   if (!Array.isArray(addOns)) return []
   return addOns
@@ -24,10 +28,10 @@ const sanitizeAddOns = (addOns: CourtAddOnPayload[] | undefined): CourtAddOnPayl
     }))
 }
 
-const update = async(req: Request<{ id: string }>, res: Response): Promise<void> => {
-  const payload: Record<string, unknown> = { ...req.body }
+const update = async(req: Request<{ id: string }, unknown, UpdateCourtPayload>, res: Response): Promise<void> => {
+  const payload: UpdateCourtPayload = { ...req.body }
   if ('addOns' in payload) {
-    payload.addOns = sanitizeAddOns(payload.addOns as CourtAddOnPayload[])
+    payload.addOns = sanitizeAddOns(payload.addOns)
   }
 
   const court = await CourtModel.findByIdAndUpdate(req.params.id, payload as UpdateQuery<CourtDocument>, { new: true })

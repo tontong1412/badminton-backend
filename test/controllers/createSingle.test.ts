@@ -20,6 +20,56 @@ describe('createSingle controller add-ons', () => {
   let mockReq: any
   let mockRes: any
 
+  interface InsertManyBookingInput {
+    startTime: string;
+    endTime: string;
+    totalPrice: number;
+    addOnTotalPrice: number;
+    selectedAddOns?: Array<{
+      id: string;
+      name: string;
+      price: number;
+      details?: string;
+    }>;
+    [key: string]: unknown;
+  }
+
+  interface InsertManyBookingResult extends InsertManyBookingInput {
+    id: string;
+    toObject: () => InsertManyBookingInput;
+  }
+
+  const isInsertManyBookingInput = (value: unknown): value is InsertManyBookingInput => {
+    if (typeof value !== 'object' || value === null) {
+      return false
+    }
+
+    const candidate = value as Record<string, unknown>
+    return typeof candidate.startTime === 'string'
+      && typeof candidate.endTime === 'string'
+      && typeof candidate.totalPrice === 'number'
+      && typeof candidate.addOnTotalPrice === 'number'
+  }
+
+  const getInsertedPayload = (): InsertManyBookingInput[] => {
+    const firstArgument: unknown = vi.mocked(BookingModel.insertMany).mock.calls[0]?.[0]
+
+    if (!Array.isArray(firstArgument)) {
+      throw new Error('Expected BookingModel.insertMany to receive an array payload')
+    }
+
+    const typedPayload: InsertManyBookingInput[] = []
+    for (const entry of firstArgument) {
+      if (!isInsertManyBookingInput(entry)) {
+        throw new Error('Expected BookingModel.insertMany payload entries to have booking fields')
+      }
+
+      typedPayload.push(entry)
+    }
+
+    return typedPayload
+  }
+
   const courtObjectId = new Types.ObjectId()
   const venueObjectId = new Types.ObjectId()
 
@@ -92,19 +142,26 @@ describe('createSingle controller add-ons', () => {
     vi.spyOn(bookingUtils, 'checkSlotAvailability').mockResolvedValue({ available: true })
     vi.spyOn(bookingUtils, 'calculateTotalPriceWithRules').mockReturnValue(300)
 
-    vi.mocked(BookingModel.insertMany).mockImplementation(async(bookings: unknown) => {
-      return (bookings as any[]).map((booking, index) => ({
-        ...booking,
-        id: new Types.ObjectId((index + 1).toString(16).padStart(24, '0')).toString(),
-        toObject: () => booking,
-      })) as any
+    vi.mocked(BookingModel.insertMany).mockImplementation((bookings) => {
+      const normalizedBookings = Array.isArray(bookings) ? bookings : [bookings]
+      const insertedBookings: InsertManyBookingResult[] = normalizedBookings.map((booking, index) => {
+        const bookingRecord = booking as InsertManyBookingInput
+
+        return {
+          ...bookingRecord,
+          id: new Types.ObjectId((index + 1).toString(16).padStart(24, '0')).toString(),
+          toObject: () => bookingRecord,
+        }
+      })
+
+      return Promise.resolve(insertedBookings) as ReturnType<typeof BookingModel.insertMany>
     })
   })
 
   it('applies add-on cost per slot when using legacy item-level add-ons', async() => {
     await createSingle(mockReq, mockRes)
 
-    const insertedPayload = vi.mocked(BookingModel.insertMany).mock.calls[0][0] as any[]
+    const insertedPayload = getInsertedPayload()
     expect(insertedPayload).toHaveLength(2)
     expect(insertedPayload.map((entry) => `${entry.startTime}-${entry.endTime}`)).toEqual([
       '20:00-21:00',
@@ -128,7 +185,7 @@ describe('createSingle controller add-ons', () => {
 
     await createSingle(mockReq, mockRes)
 
-    const insertedPayload = vi.mocked(BookingModel.insertMany).mock.calls[0][0] as any[]
+    const insertedPayload = getInsertedPayload()
     expect(insertedPayload).toHaveLength(2)
     expect(insertedPayload[0].totalPrice).toBe(400)
     expect(insertedPayload[0].addOnTotalPrice).toBe(100)
