@@ -24,6 +24,13 @@ export interface BookingDocument extends Document {
   recurringGroupID?: Types.ObjectId;
   status: BookingStatus;
   paymentStatus: PaymentStatus;
+  selectedAddOns?: Array<{
+    id: string;
+    name: string;
+    price: number;
+    details?: string;
+  }>;
+  addOnTotalPrice?: number;
   slip?: string;
   slipTimestamp?: Date;
   resaleListingID?: Types.ObjectId;
@@ -90,6 +97,16 @@ const bookingSchema = new Schema<BookingDocument>({
     required: true,
     default: PaymentStatus.Unpaid,
   },
+  selectedAddOns: {
+    type: [{
+      id: { type: String, required: true, trim: true },
+      name: { type: String, required: true, trim: true },
+      price: { type: Number, required: true, min: 0 },
+      details: { type: String, trim: true },
+    }],
+    default: [],
+  },
+  addOnTotalPrice: { type: Number, min: 0, default: 0 },
   couponCode: { type: String, trim: true, uppercase: true },
   discountAmount: { type: Number, min: 0 },
   slip: String,

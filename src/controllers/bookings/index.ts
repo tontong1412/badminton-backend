@@ -12,6 +12,7 @@ import getVenueBookings from './getVenueBookings'
 import markAsPaid from './markAsPaid'
 import payBooking from './payBooking'
 import reschedule from './reschedule'
+import updateAddOns from './updateAddOns'
 
 export default {
   createSingle: controllerErrorHandler(createSingle),
@@ -27,4 +28,5 @@ export default {
   approvePayment: controllerErrorHandler(approvePayment),
   markAsPaid: controllerErrorHandler(markAsPaid),
   reschedule: controllerErrorHandler(reschedule),
+  updateAddOns: controllerErrorHandler(updateAddOns),
 }

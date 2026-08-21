@@ -18,6 +18,8 @@ function generateBookingRef(): string {
 interface CreateRecurringBookingPayload {
   courtID?: string;
   courtIDs?: string[];
+  addOnIDsByCourtAndSlot?: Record<string, Record<string, string[]>>;
+  addOnIDsByCourt?: Record<string, string[]>;
   startTime: string;
   endTime: string;
   pattern: RecurringPattern;
@@ -30,6 +32,13 @@ interface CreateRecurringBookingPayload {
   guestName?: string;
   guestPhone?: string;
   guestEmail?: string;
+}
+
+interface BookingAddOnSnapshot {
+  id: string;
+  name: string;
+  price: number;
+  details?: string;
 }
 
 const createRecurring = async(
@@ -189,10 +198,73 @@ const createRecurring = async(
     recurringGroups.map((group) => [group.courtID.toString(), group._id])
   )
 
-  const bookings = await BookingModel.insertMany(courts.flatMap((court) => dates.flatMap((date) => {
-    const recurringGroupID = recurringGroupByCourtID.get(court._id.toString())
+  const normalizeIDs = (ids: string[] | undefined): string[] => Array.from(new Set((ids ?? []).map((id) => id.trim()).filter(Boolean)))
+  const addOnIDsByCourt = req.body.addOnIDsByCourt ?? {}
+  const addOnIDsByCourtAndSlot = req.body.addOnIDsByCourtAndSlot ?? {}
+  const addOnCatalogByCourtID = new Map<string, Map<string, { id: string; name: string; price: number; details?: string }>>()
+  for (const court of courts) {
+    const courtID = String(court._id)
+    const activeCourtAddOns = (court.addOns ?? []).filter((addOn) => addOn.isActive !== false)
+    addOnCatalogByCourtID.set(courtID, new Map(activeCourtAddOns.map((addOn) => [addOn.id, addOn])))
 
-    return slotTemplates.map((slot) => ({
+    const legacyRequestedAddOnIDs = normalizeIDs(addOnIDsByCourt[courtID])
+    const slotRequested = addOnIDsByCourtAndSlot[courtID] ?? {}
+    const idsToValidate = new Set<string>(legacyRequestedAddOnIDs)
+    for (const ids of Object.values(slotRequested)) {
+      normalizeIDs(ids).forEach((id) => idsToValidate.add(id))
+    }
+    const addOnByID = addOnCatalogByCourtID.get(courtID)!
+    const missingAddOnIDs = Array.from(idsToValidate).filter((id) => !addOnByID.has(id))
+    if (missingAddOnIDs.length > 0) {
+      res.status(422).json({
+        message: `Invalid add-ons for court ${court.name}.`,
+        courtID,
+        invalidAddOnIDs: missingAddOnIDs,
+      })
+      return
+    }
+  }
+
+  const draftBookings = courts.flatMap((court) => dates.flatMap((date) => {
+    const recurringGroupID = recurringGroupByCourtID.get(court._id.toString())
+    const courtID = String(court._id)
+    const addOnByID = addOnCatalogByCourtID.get(courtID)!
+    const slotRequested = addOnIDsByCourtAndSlot[courtID] ?? {}
+    const legacyRequestedAddOnIDs = normalizeIDs(addOnIDsByCourt[courtID])
+
+    const getSelectedAddOnsForSlot = (slotStart: string, slotEnd: string): BookingAddOnSnapshot[] => {
+      const exactSlotKey = `${slotStart}-${slotEnd}`
+      let slotIDs = slotRequested[exactSlotKey] ? normalizeIDs(slotRequested[exactSlotKey]) : legacyRequestedAddOnIDs
+      if (!slotRequested[exactSlotKey] && Object.keys(slotRequested).length > 0) {
+        // Allow 1-hour slot selections to apply to finer slot durations (e.g., 30-minute recurring slots).
+        const slotStartMins = bookingUtils.timeToMinutes(slotStart)
+        const slotEndMins = bookingUtils.timeToMinutes(slotEnd)
+        const matchingContainerKey = Object.keys(slotRequested).find((key) => {
+          const [containerStart, containerEnd] = key.split('-')
+          if (!containerStart || !containerEnd) return false
+          const containerStartMins = bookingUtils.timeToMinutes(containerStart)
+          const containerEndMins = bookingUtils.timeToMinutes(containerEnd)
+          return containerStartMins <= slotStartMins && containerEndMins >= slotEndMins
+        })
+        if (matchingContainerKey) {
+          slotIDs = normalizeIDs(slotRequested[matchingContainerKey])
+        }
+      }
+
+      return slotIDs
+        .map((id) => addOnByID.get(id))
+        .filter((addOn): addOn is NonNullable<typeof addOn> => Boolean(addOn))
+        .map((addOn) => ({
+          id: addOn.id,
+          name: addOn.name,
+          price: addOn.price,
+          details: addOn.details,
+        }))
+    }
+
+    const sessionDrafts = slotTemplates.map((slot) => ({
+      selectedAddOns: getSelectedAddOnsForSlot(slot.startTime, slot.endTime),
+      addOnTotalPrice: 0,
       bookingBundleID,
       bookingRef,
       courtID: court._id,
@@ -217,7 +289,17 @@ const createRecurring = async(
       note: req.body.note,
       resaleOutcome: ResaleOutcome.None,
     }))
-  })))
+
+    for (const booking of sessionDrafts) {
+      const addOnTotal = booking.selectedAddOns.reduce((sum, addOn) => sum + addOn.price, 0)
+      booking.addOnTotalPrice = addOnTotal
+      booking.totalPrice = Number((booking.totalPrice + addOnTotal).toFixed(2))
+    }
+
+    return sessionDrafts
+  }))
+
+  const bookings = await BookingModel.insertMany(draftBookings)
 
   for (const recurringGroup of recurringGroups) {
     const groupBookings = bookings.filter((booking) => (

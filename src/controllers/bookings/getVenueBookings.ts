@@ -6,6 +6,13 @@ import PlayerModel from '../../schema/player'
 import requestUserUtils from '../../utils/requestUser'
 import { RequestWithCookies } from '../../type'
 
+const escapeRegex = (value: string): string => value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+
+const matchesSearch = (value: unknown, search: string): boolean => {
+  if (typeof value !== 'string') return false
+  return value.toLowerCase().includes(search)
+}
+
 const getVenueBookings = async(
   req: RequestWithCookies & Request,
   res: Response,
@@ -35,6 +42,9 @@ const getVenueBookings = async(
 
   const query: Record<string, unknown> = { courtID: { $in: courtIDs } }
 
+  const rawSearch = typeof req.query.search === 'string' ? req.query.search.trim() : ''
+  const normalizedSearch = rawSearch.toLowerCase()
+
   const paymentStatusFilter = typeof req.query.paymentStatus === 'string' ? req.query.paymentStatus : undefined
   if (paymentStatusFilter) {
     query.paymentStatus = paymentStatusFilter
@@ -46,6 +56,36 @@ const getVenueBookings = async(
     const end = new Date(dateFilter)
     end.setDate(end.getDate() + 1)
     query.date = { $gte: start, $lt: end }
+  } else if (rawSearch) {
+    const todayStart = new Date()
+    todayStart.setHours(0, 0, 0, 0)
+    query.date = { $gte: todayStart }
+  }
+
+  if (rawSearch) {
+    const regex = new RegExp(escapeRegex(rawSearch), 'i')
+    const matchingPlayers = await PlayerModel.find({
+      $or: [
+        { 'displayName.en': regex },
+        { 'displayName.th': regex },
+        { 'officialName.en': regex },
+        { 'officialName.th': regex },
+        { 'contact.tel': regex },
+        { 'contact.email': regex },
+      ],
+    }).select('userID')
+
+    const matchingUserIDs = matchingPlayers
+      .map((player) => player.userID)
+      .filter((userID): userID is NonNullable<typeof userID> => Boolean(userID))
+
+    query.$or = [
+      { bookingRef: regex },
+      { guestName: regex },
+      { guestPhone: regex },
+      { guestEmail: regex },
+      ...(matchingUserIDs.length > 0 ? [{ userID: { $in: matchingUserIDs } }] : []),
+    ]
   }
 
   const bookings = await BookingModel.find(query).sort({ date: 1, startTime: 1 })
@@ -71,6 +111,20 @@ const getVenueBookings = async(
     }
     return json
   })
+
+  if (normalizedSearch) {
+    const filtered = enriched.filter((booking) => (
+      matchesSearch(booking.bookingRef, normalizedSearch)
+      || matchesSearch(booking.guestName, normalizedSearch)
+      || matchesSearch(booking.guestPhone, normalizedSearch)
+      || matchesSearch(booking.guestEmail, normalizedSearch)
+      || matchesSearch(booking.bookerName, normalizedSearch)
+      || matchesSearch(booking.bookerPhone, normalizedSearch)
+    ))
+
+    res.json(filtered)
+    return
+  }
 
   res.json(enriched)
 }

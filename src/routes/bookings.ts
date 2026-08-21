@@ -16,6 +16,7 @@ router.put('/bundles/:bookingBundleID/pay', bookingController.payBooking)
 router.put('/bundles/:bookingBundleID/approve-payment', middlewares.auth, bookingController.approvePayment)
 router.put('/:id/mark-paid', middlewares.auth, bookingController.markAsPaid)
 router.put('/:id/reschedule', middlewares.auth, bookingController.reschedule)
+router.put('/:id/add-ons', middlewares.auth, bookingController.updateAddOns)
 router.delete('/:id', middlewares.auth, bookingController.cancel)
 
 export default router

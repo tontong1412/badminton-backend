@@ -7,12 +7,21 @@ export interface CourtPricingRule {
   pricePerHour: number;
 }
 
+export interface CourtAddOn {
+  id: string;
+  name: string;
+  price: number;
+  details?: string;
+  isActive: boolean;
+}
+
 export interface CourtDocument extends Document {
   venueID: Types.ObjectId;
   name: string;
   description?: string;
   pricePerHour: number;  // default fallback price
   pricingRules: CourtPricingRule[];
+  addOns: CourtAddOn[];
   slotStartOffsetMinutes: number;
   currency: string;
   status: 'active' | 'inactive';
@@ -25,6 +34,14 @@ const pricingRuleSchema = new Schema<CourtPricingRule>({
   pricePerHour: { type: Number, required: true, min: 0 },
 }, { _id: false })
 
+const courtAddOnSchema = new Schema<CourtAddOn>({
+  id: { type: String, required: true, trim: true },
+  name: { type: String, required: true, trim: true },
+  price: { type: Number, required: true, min: 0 },
+  details: { type: String, trim: true },
+  isActive: { type: Boolean, required: true, default: true },
+}, { _id: false })
+
 const courtSchema = new Schema<CourtDocument>({
   venueID: {
     type: Schema.Types.ObjectId,
@@ -35,6 +52,7 @@ const courtSchema = new Schema<CourtDocument>({
   description: { type: String, trim: true },
   pricePerHour: { type: Number, required: true, min: 0 },
   pricingRules: { type: [pricingRuleSchema], default: [] },
+  addOns: { type: [courtAddOnSchema], default: [] },
   slotStartOffsetMinutes: { type: Number, default: 0, enum: [0, 30] },
   currency: { type: String, required: true, trim: true, default: 'THB' },
   status: {
