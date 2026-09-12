@@ -1,10 +1,12 @@
 import express from 'express'
 import matchControllers from '../controllers/matches'
 import middlewares from '../middlewares'
+import streamMatchUpdates from '../controllers/matches/stream'
 
 const router = express.Router()
 
 router.get('/my-matches', middlewares.auth, matchControllers.getMyMatches)
+router.get('/stream', streamMatchUpdates)
 router.get('/:id', matchControllers.getByID)
 router.get('/', matchControllers.get)
 router.post('/schedule', middlewares.auth, matchControllers.schedule)

@@ -2,6 +2,7 @@ import { Request, Response } from 'express'
 import { ErrorResponse, Match, NewMatch, ResponseLocals } from '../../type'
 import EventModel from '../../schema/event'
 import MatchModel from '../../schema/match'
+import { broadcastMatchUpdate } from '../../utils/matchUpdates'
 
 const update =  async(
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -42,6 +43,11 @@ const update =  async(
     res.status(404).json({ message: 'Match not found' })
     return
   }
+
+  broadcastMatchUpdate({
+    tournamentID: event.tournament.id.toString(),
+    matchID: updatedMatch.id,
+  })
 
   res.send(updatedMatch as Match)
   return

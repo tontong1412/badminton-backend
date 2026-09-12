@@ -1,6 +1,8 @@
 import { Request, Response } from 'express'
 import { ErrorResponse, MatchStatus, ResponseLocals, TournamentMatch, TournamentMatchStep } from '../../type'
 import MatchModel from '../../schema/match'
+import EventModel from '../../schema/event'
+import { broadcastMatchUpdate } from '../../utils/matchUpdates'
 
 interface SetScorePayload {
   matchID: string;
@@ -13,8 +15,7 @@ const setScore = async(
   req: Request<any, unknown, SetScorePayload, unknown>,
   res: Response<TournamentMatch | ErrorResponse, ResponseLocals>
 ) => {
-  try{
-
+  try {
     const { matchID, score, status } = req.body
 
     let scoreSetA = 0
@@ -26,11 +27,28 @@ const setScore = async(
       const [scoreA, scoreB] = set.split('-')
       if (Number(scoreA) > Number(scoreB)) scoreSetA++
       if (Number(scoreB) > Number(scoreA)) scoreSetB++
-      scoreDiffA = scoreDiffA + Number(scoreA) - Number(scoreB)
-      scoreDiffB = scoreDiffB + Number(scoreB) - Number(scoreA)
+      scoreDiffA += Number(scoreA) - Number(scoreB)
+      scoreDiffB += Number(scoreB) - Number(scoreA)
     })
 
-    const currentMatch = await MatchModel.findByIdAndUpdate(
+    const currentMatch = await MatchModel.findById(matchID)
+    if (!currentMatch) {
+      res.status(404).send({ message: 'Match not found' })
+      return
+    }
+
+    if (
+      status === MatchStatus.Finished
+      && currentMatch.step !== TournamentMatchStep.Group
+      && currentMatch.round
+      && currentMatch.round > 2
+      && scoreSetA === scoreSetB
+    ) {
+      res.status(400).send({ message: 'should have winner for knock out round' })
+      return
+    }
+
+    const updatedMatch = await MatchModel.findByIdAndUpdate(
       matchID,
       {
         'teamA.scoreSet': scoreSetA,
@@ -38,43 +56,51 @@ const setScore = async(
         'teamA.scoreDiff': scoreDiffA,
         'teamB.scoreDiff': scoreDiffB,
         status,
-        scoreLabel: score
+        scoreLabel: score,
       },
-      { new:true }
+      { new: true }
     )
 
-    if(!currentMatch){
+    if (!updatedMatch) {
       res.status(404).send({ message: 'Match not found' })
       return
     }
 
-    if(status === MatchStatus.Finished
-    && currentMatch.step !== TournamentMatchStep.Group
-    && currentMatch.round
-    && currentMatch.round > 2 // not final round
-    && (currentMatch.bracketOrder !== undefined)
-    ){
-      if (scoreSetA === scoreSetB) {
-        res.status(400).send({ message:'should have winner for knock out round' })
-        return
-      }
+    const event = await EventModel.findById(updatedMatch.event.id).select({ tournament: 1 }).lean()
+    if (!event) {
+      res.status(404).send({ message: 'Event not found' })
+      return
+    }
+
+    if (
+      status === MatchStatus.Finished
+      && updatedMatch.step !== TournamentMatchStep.Group
+      && updatedMatch.round
+      && updatedMatch.round > 2
+      && updatedMatch.bracketOrder !== undefined
+    ) {
       const winTeam = scoreSetA > scoreSetB ? 'teamA' : 'teamB'
-      const nextMatchTeam = currentMatch.bracketOrder % 2 === 0 ? 'teamA' : 'teamB'
+      const nextMatchTeam = updatedMatch.bracketOrder % 2 === 0 ? 'teamA' : 'teamB'
       await MatchModel.findOneAndUpdate(
         {
-          'event.id': currentMatch.event.id,
-          round: currentMatch.round / 2,
-          step: currentMatch.step,
-          bracketOrder: Math.floor(currentMatch.bracketOrder / 2)
+          'event.id': updatedMatch.event.id,
+          round: updatedMatch.round / 2,
+          step: updatedMatch.step,
+          bracketOrder: Math.floor(updatedMatch.bracketOrder / 2),
         },
         {
-          [`${nextMatchTeam}`]: currentMatch[winTeam]
+          [nextMatchTeam]: updatedMatch[winTeam],
         }
       )
     }
-    res.send(currentMatch.toJSON() as TournamentMatch)
-    return
-  }catch (error){
+
+    broadcastMatchUpdate({
+      tournamentID: event.tournament.id.toString(),
+      matchID: updatedMatch.id,
+    })
+
+    res.send(updatedMatch.toJSON() as TournamentMatch)
+  } catch (error) {
     console.log(error)
     res.status(500).send({ message: 'Please check if you have entered score in a correct format. For example, 21-15' })
   }
