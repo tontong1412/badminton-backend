@@ -2,15 +2,18 @@ import { Request, Response } from 'express'
 import { ErrorResponse, Match, NewMatch, ResponseLocals } from '../../type'
 import EventModel from '../../schema/event'
 import MatchModel from '../../schema/match'
+import { broadcastMatchUpdate } from '../../utils/matchUpdates'
+
+interface MatchUpdateParams {
+  id: string;
+}
 
 const update =  async(
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  req: Request<any, unknown, NewMatch, unknown>,
+  req: Request<MatchUpdateParams, unknown, NewMatch, unknown>,
   res: Response<Match | ErrorResponse, ResponseLocals>
 ) => {
 
   const { user } = res.locals
-  // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
   const { id } = req.params
 
   const matchToUpdate = await MatchModel.findById(id).select({ event:1, umpire:1 })
@@ -42,6 +45,13 @@ const update =  async(
     res.status(404).json({ message: 'Match not found' })
     return
   }
+
+  const updatedMatchId = String(updatedMatch.id)
+
+  broadcastMatchUpdate({
+    tournamentID: event.tournament.id.toString(),
+    matchID: updatedMatchId,
+  })
 
   res.send(updatedMatch as Match)
   return
