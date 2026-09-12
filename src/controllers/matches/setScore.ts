@@ -94,9 +94,10 @@ const setScore = async(
       )
     }
 
+    const updatedMatchId = String(updatedMatch.id)
     broadcastMatchUpdate({
       tournamentID: event.tournament.id.toString(),
-      matchID: updatedMatch.id,
+      matchID: updatedMatchId,
     })
 
     res.send(updatedMatch.toJSON() as TournamentMatch)
