@@ -32,6 +32,9 @@ async function cancelExpiredBookings(): Promise<void> {
       if (listing.subStartTime && listing.subEndTime) {
         // Sub-range purchase: remove the sold range from the source booking and restore the listing
         if (sourceBooking) {
+          if (sourceBooking.status === BookingStatus.Cancelled && sourceBooking.resaleOutcome === ResaleOutcome.Resold) {
+            sourceBooking.status = BookingStatus.Confirmed
+          }
           sourceBooking.resaleSoldRanges = (sourceBooking.resaleSoldRanges ?? []).filter(
             (r) => !(r.startTime === listing.subStartTime && r.endTime === listing.subEndTime),
           )
