@@ -85,7 +85,17 @@ const purchaseListing = async(
     if (!sourceBooking.resaleSoldRanges) sourceBooking.resaleSoldRanges = []
     sourceBooking.resaleSoldRanges.push({ startTime: buyerStartTime, endTime: buyerEndTime })
     sourceBooking.resaleListingID = undefined
-    sourceBooking.resaleOutcome = ResaleOutcome.None
+    let coveredUntil = bookingUtils.timeToMinutes(sourceBooking.startTime)
+    const ranges = [...sourceBooking.resaleSoldRanges].sort(
+      (first, second) => bookingUtils.timeToMinutes(first.startTime) - bookingUtils.timeToMinutes(second.startTime),
+    )
+    for (const range of ranges) {
+      if (bookingUtils.timeToMinutes(range.startTime) > coveredUntil) break
+      coveredUntil = Math.max(coveredUntil, bookingUtils.timeToMinutes(range.endTime))
+    }
+    const fullyResold = coveredUntil >= bookingUtils.timeToMinutes(sourceBooking.endTime)
+    sourceBooking.status = fullyResold ? BookingStatus.Cancelled : BookingStatus.Confirmed
+    sourceBooking.resaleOutcome = fullyResold ? ResaleOutcome.Resold : ResaleOutcome.None
     await sourceBooking.save()
   } else {
     // Full-booking purchase: cancel the original booking.
